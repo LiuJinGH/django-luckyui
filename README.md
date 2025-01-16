@@ -1,8 +1,8 @@
-<p style="text-align: center">
+<p align="center">
     <img src="img/luckui.png">
 </p>
 
-<p style="text-align: center">
+<p align="center">
     <a href="https://github.com/LiuJinGH/django-luckyui/blob/main/LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-blue.svg">
     </a>
