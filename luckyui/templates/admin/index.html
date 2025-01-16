@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+{% load i18n static simpletags luckytags %}
+{# 获取语言类型 #}
+{% get_current_language as LANGUAGE_CODE %}
+{# 获取语言方向，部分语言是从右到左进行阅读的 #}
+{% get_current_language_bidi as LANGUAGE_BIDI %}
+
+<html lang="{{ LANGUAGE_CODE|default:"en-us" }}" {% if LANGUAGE_BIDI %}dir="rtl"{% endif %}>
+<head>
+    <meta charset="UTF-8">
+    {# 多核浏览器，优先使用webkit #}
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    {# 适配移动设备 #}
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"/>
+
+    {% block title %}
+        <title>{{ site_title }}</title>
+    {% endblock %}
+
+    {% block icon %}
+        <link rel="shortcut icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    {% endblock %}
+
+    {% block css %}
+        {% include 'luckyui/includes/css-part.html' %}
+
+        <link rel="stylesheet" href="{% static 'luckyui/css/index.css' %}">
+        <link rel="stylesheet" href="{% static 'admin/simpleui-x/waves/waves.min.css' %}">
+    {% endblock %}
+
+    {% block head %}
+        <script src="{% static 'admin/luckyui-x/echarts/echarts.min.js' %}"></script>
+    {% endblock %}
+</head>
+
+<body>
+    <style type="text/css">
+        .el-tabs__nav .el-tabs__item:nth-child(1) .el-icon-close {
+            display: none;
+        }
+
+        * {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .search_menu_select {
+            margin-top: 15px;
+        }
+
+        .search_menu_select .el-input {
+            margin-left: 10px;
+            margin-right: 10px;
+            width: calc(100% - 20px);
+        }
+
+        [v-block] {
+            display: none;
+        }
+    </style>
+
+    {% verbatim dynamicCss %}
+    {% endverbatim dynamicCss %}
+
+    {% block menus %}
+        {% autoescape off %}
+            {% lucky_menus %}
+        {% endautoescape %}
+    {% endblock %}
+
+<div id="main" class="body" @click="mainClick($event)" v-block>
+    {# 主题处理 #}
+    {% block theme_css %}
+        {# 如果已经设置了主题，加载设置的主题 #}
+        <link v-if="theme && theme!=''" rel="stylesheet" :href="theme">
+        {# 加载默认的主题 #}
+        {% if "SIMPLEUI_DEFAULT_THEME"|get_config %}
+            <link v-else rel="stylesheet"
+                  href="{% static 'luckyui/theme/' %}{{ "SIMPLEUI_DEFAULT_THEME"|get_config }}">
+        {% else %}
+            <link v-else rel="stylesheet"
+                  href="{% static 'luckyui/theme/luckyui-blue.css' %}">
+        {% endif %}
+    {% endblock %}
+
+    <!-- 移动端 -->
+    <el-drawer
+            class="lite-menus"
+            title="{{ site_header }}"
+            :visible.sync="drawer"
+            :show-close="false"
+            size="50%"
+            direction="ltr">
+        <el-menu unique-opened="true" :default-active="menuActive">
+            <div v-for="(item,i) in menus" :key="item">
+                <el-menu-item v-if="!item.models" :index="item.eid+''" @click="openTab(item,item.eid)">
+                    <i :class="'menu-icon '+item.icon"></i>
+                    <span slot="title" v-text="item.name"></span>
+                </el-menu-item>
+
+                <el-submenu v-else :index="item.eid+''">
+                    <template slot="title">
+                        <i :class="'menu-icon '+item.icon"></i>
+                        <span slot="title" v-text="item.name"></span>
+                    </template>
+
+                    <el-menu-item-group v-for="(sub,j) in item.models" :title="sub.name" :key="sub.name">
+                        <el-menu-item :index="sub.eid+''" @click="openTab(sub,item.eid)">
+                            <i :class="'menu-icon '+sub.icon"></i>
+                            <span slot="title" v-text="sub.name"></span>
+                        </el-menu-item>
+                    </el-menu-item-group>
+                </el-submenu>
+
+            </div>
+        </el-menu>
+    </el-drawer>
+
+    <el-container :style="{height: height+'px'}">
+
+        <el-aside v-show="!mobile" width="auto" class="menu" {% block menu_style %}{% endblock %}>
+            {% block logo %}
+                <!-- logo -->
+                <div class="logo-wrap" v-if="!fold">
+                    <div class="float-wrap">
+                        <div class="left">
+                            {% if "SIMPLEUI_LOGO"|get_config %}
+                                <img src="{{ "SIMPLEUI_LOGO"|get_config |safe }}">
+                            {% else %}
+                                <img src="{% static 'admin/simpleui-x/img/logo.png' %}">
+                            {% endif %}
+                        </div>
+                        <div class="left" style="margin-left: 10px;">
+                            <span>{{ site_header }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="width: 120px" v-else></div>
+            {% endblock %}
+
+            <!-- menu -->
+            <!-- 超级管理员搜索菜单-->
+            {% if user.is_superuser %}
+                <div class="search_menu_select">
+                    <el-select v-model="menus_value" filterable placeholder="请输入菜单名称" @change="menusChange">
+                        <el-option
+                          v-for="item in menus_list"
+                          :key="item.eid"
+                          :label="item.name"
+                          :value="item">
+                        </el-option>
+                    </el-select>
+                </div>
+            {% endif %}
+
+            <transition name="el-zoom-in-center">
+
+                <multiple-menu
+                        :menus="menus"
+                        :menu-active="menuActive"
+                        :fold="fold"
+                ></multiple-menu>
+            </transition>
+
+        </el-aside>
+
+        <el-container>
+            {% block header %}
+                <el-header class="navbar" style="font-size: 12px;padding: 10px;height: auto">
+                    <div class="float-wrap">
+                        <div class="left">
+                            <el-button v-waves circle icon="fas fa-bars"
+                                       style="margin-right: 10px;border: none" @click="foldClick()"></el-button>
+                            {% block breadcrumb %}
+                                <el-breadcrumb v-if="!mobile" style="display: inline-block;" separator="/">
+                                    {% verbatim myclode %}
+                                        <el-breadcrumb-item><i :class="menus[0].icon"
+                                                               :key="menus[0].name"></i>{{ menus[0].name }}
+                                        </el-breadcrumb-item>
+                                        <el-breadcrumb-item v-for="item in breadcrumbs"
+                                                            :key="item">
+                                            <span :class="getIcon(item.name,item.icon)"></span>
+                                            <span v-text="item.name"></span>
+                                        </el-breadcrumb-item>
+                                    {% endverbatim myclode %}
+                                </el-breadcrumb>
+                            {% endblock %}
+                        </div>
+
+                        <div class="right">
+                            {# 头部 右侧按钮区 #}
+                            <div class="btn-list">
+                                {# 字体大小 #}
+                                <el-button icon="fas fa-font" circle v-waves @click="fontClick()"></el-button>
+                                {# 全屏 #}
+                                <el-button
+                                        :icon="this.zoom?'fas fa-compress-arrows-alt':'fas fa-expand-arrows-alt'"
+                                        @click="goZoom()" circle></el-button>
+
+                                {% if doctor_id != 0 %}
+                                    <!-- 医生通知消息-->
+                                    <el-button icon="fa-solid fa-bell" @click="show_notify_drawer" circle></el-button>
+
+                                {% endif %}
+                                {# 首页 #}
+                                <el-button icon="fas fa-home" @click="goIndex('{{ 'SIMPLEUI_INDEX'|get_config }}')"
+                                           circle v-waves></el-button>
+
+                                {% verbatim mycode %}
+                                    <!-- 主题 -->
+                                    <el-button @click="is_show_theme_dialog=true" v-waves>
+                                        <i class="fas fa-palette"></i>
+                                        <span v-text="getLanuage('Change theme')"></span>
+                                        <i class="el-icon-arrow-down el-icon--right"></i>
+                                    </el-button>
+                                {% endverbatim mycode %}
+                            </div>
+
+                            <el-dropdown>
+                                <el-button v-waves class="user-block">
+                                    {% if user.avatar %}
+                                        <img src="{{ user.avatar.url }}"
+                                             style="width: 28px;height: 28px;border-radius: 50%">
+                                    {% else %}
+                                        <i class="fas fa-user"></i>
+                                    {% endif %}
+                                    <span class="user-name">{{ user }}</span>
+                                    <i class="el-icon-arrow-down el-icon--right"></i>
+                                </el-button>
+
+                                <el-dropdown-menu slot="dropdown">
+                                    {% verbatim mycode %}
+                                        <el-dropdown-item v-waves icon="far fa-edit"
+                                                          @click.native="changePassword()">{{ language.change_password }}
+                                        </el-dropdown-item>
+                                    {% endverbatim mycode %}
+                                    {% has_enable_admindoc as has_admindoc %}
+                                    {% if has_admindoc %}
+                                        <el-dropdown-item icon="el-icon-document"
+                                                          @click.native="openTab({eid:100000,name:'{% trans 'Documentation' %}',icon:'el-icon-document',url:'{% url 'django-admindocs-docroot' %}'})"
+                                                          divided>{% trans 'Documentation' %}</el-dropdown-item>
+                                    {% endif %}
+
+                                    {% verbatim mycode %}
+                                        <el-dropdown-item icon="el-icon-close"
+                                                          @click.native="logout()"
+                                                          divided>{{ language.logout }}</el-dropdown-item>
+                                    {% endverbatim mycode %}
+                                </el-dropdown-menu>
+                            </el-dropdown>
+                        </div>
+                    </div>
+                </el-header>
+            {% endblock %}
+            <el-main>
+                {# 导航栏 #}
+                <el-tabs v-model="tabModel" {% block tabs_type %}type="border-card" {% endblock %} editable
+                         :style="isResize?'height:100%':'height: calc(100% - 97px)'" @edit="handleTabsEdit"
+                         @tab-click="tabClick" @tab-remove="tabRemove">
+
+                    <el-tab-pane v-for="(item,index) in tabs" :closable="index!=0" :label="item.name" :name="item.id"
+                                 :key="item.id" lazy="true">
+                        {% home_page %}
+                        {% if home %}
+                            <span v-if="index==0" slot="label">
+                                <i class="{{ icon }}"></i><span>{{ title }}</span>
+                            </span>
+                            <span v-else slot="label" @contextmenu.prevent="contextmenu(item,$event)">
+                        {% else %}
+                            <span slot="label" @contextmenu.prevent="contextmenu(item,$event)">
+                        {% endif %}
+
+                        {% block tab-item %}
+                            <i :class="item.loading?'el-icon-loading':item.icon"></i>
+                            <span v-text="item.name"></span>
+                        {% endblock %}
+                        </span>
+
+                        <div v-if="index==0" style="height:100%">
+                            {% block home_content %}
+                                {% if home %}
+                                    <iframe :src="'{{ home }}'"></iframe>
+                                {% else %}
+                                    {% include './home.html' %}
+                                {% endif %}
+                            {% endblock %}
+                        </div>
+
+                        <div v-else class="iframe-wrap">
+                            <iframe :src="item.url" :id="item.id" @load="iframeLoad(item,$event)"></iframe>
+                            {% if "SIMPLEUI_LOADING"|get_config != False %}
+                                <div v-if="loading" class="loading" @dblclick="loading=false">
+                                    <div class="center">
+                                        <span class="el-icon-loading"></span>
+                                        <span>loading...</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </el-tab-pane>
+
+                </el-tabs>
+            </el-main>
+
+        </el-container>
+
+    </el-container>
+
+    <ul v-if="popup.show" class="el-dropdown-menu el-popper" ref="popupmenu"
+        :style="{position: 'absolute',top: popup.top+'px',left: popup.left+'px'}" x-placement="top-end">
+        <li v-for="(item,index) in popup.menus" tabindex="-1" class="el-dropdown-menu__item"
+            @click="item.handler(popup.tab,item)"><i :class="item.icon"></i><span
+                v-text="item.text"></span>
+        </li>
+    </ul>
+
+    <el-dialog title="{% trans 'Change password' %}" :visible.sync="pwdDialog.show">
+        <iframe frameborder="0" :src="pwdDialog.url" width="100%" height="500"></iframe>
+    </el-dialog>
+
+    <!--   医生通知消息-->
+    {% block drawer %}
+        <notify-drawer :is_notify_drawer="is_notify_drawer" doctor_id="{{ doctor_id }}"
+                       @close="is_notify_drawer = false"></notify-drawer>
+    {% endblock %}
+
+    <!--   快捷菜单-->
+    {% block shortcut_menu %}
+
+    {% endblock %}
+
+    <!-- 悬浮聊天 -->
+    {% block chat %}
+
+    {% endblock %}
+
+    {# 主题设置弹窗 #}
+    {% block theme_dialog %}
+        <el-dialog
+                :title="getLanuage('Change theme')"
+                :visible.sync="is_show_theme_dialog"
+                :width="small?'90%':'50%'">
+            {% block theme_body %}
+                <div class="change-theme clearfix">
+                    <div v-waves :class="{'theme-item':true,active:themeName==item.text}" v-for="(item,i) in themes"
+                         :key="item.text"
+                         :title="getLanuage(item.text)" @click="set_theme(item)">
+                        <div class="theme-menu" :style="{background:item.menu}">
+                            <div class="theme-logo" :style="{background: item.logo}"></div>
+                        </div>
+                        <div class="theme-top" :style="{background: item.top}"></div>
+                    </div>
+                </div>
+            {% endblock %}
+        </el-dialog>
+    {% endblock %}
+
+    {% block font_dialog %}
+        <el-dialog
+                :title="getLanuage('Set font size')"
+                :visible.sync="fontDialogVisible"
+                :width="small?'90%':'50%'">
+            <el-slider v-model="fontSlider" :min="12" :max="100" show-input @change="fontSlideChange"></el-slider>
+            <div style="text-align: right;padding-top: 20px">
+                <el-button type="primary" @click="reset()" v-text="getLanuage('Reset')"></el-button>
+            </div>
+        </el-dialog>
+    {% endblock %}
+
+</div>
+
+{% block base_script %}
+    <script type="text/javascript">
+        {% if home %}
+            var home = {
+                id: '0',
+                index: '1',
+                name: '{{ title }}',
+                icon: '{{ icon }}',
+                active: true,
+                eid: '1'
+            }
+        {% else %}
+            var home = {
+                id: '0',
+                index: '1',
+                eid: '1',
+                name: "{% trans 'Home' %}",
+                icon: 'fas fa-home'
+            };
+        {% endif %}
+        menus.unshift(home);
+        window.language = {
+            change_password: '{% trans 'Change password' %}',
+            logout: '{% trans 'Log out' %}',
+            yes: '{% trans 'Yes' %}',
+            no: '{% trans 'No' %}',
+            confirm: '{% trans 'Are you sure?' %}'
+        }
+        {# 设置主题文件的路径 #}
+        window.themeUrl = '{% static 'luckyui/theme/' %}';
+
+        window.urls = {
+            changePassword: "{% url 'admin:password_change' %}",
+            logout: "{% url 'admin:logout' %}"
+        }
+        var lanuageCode = '{% get_language %}';
+
+        function localeError(e) {
+        }
+    </script>
+
+    {# 公共部署JS #}
+    {% include 'admin/includes/js-part.html' %}
+
+    <script type="text/javascript">
+        __simpleui_version = '{% simple_version %}';
+    </script>
+    <script type="text/javascript"
+            src="{% static 'admin/simpleui-x/automatic/dicts.js' %}?_={% get_version %}"></script>
+    <script type="text/javascript"
+            src="{% static 'admin/simpleui-x/automatic/segment.js' %}?_={% get_version %}"></script>
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/locale/en-us.js' %}?_={% get_version %}"></script>
+    <script type="text/javascript"
+            src="{% static 'admin/simpleui-x/locale/' %}{% get_language %}.js?_={% get_version %}"
+            onerror="localeError()"></script>
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/js/cookie.js' %}?_={% get_version %}"></script>
+    <script type="text/javascript" src="{% static 'luckyui/theme/theme.js' %}?_={% get_version %}"></script>
+    <script type="text/javascript"
+            src="{% static 'admin/simpleui-x/waves/waves.min.js' %}?_={% get_version %}"></script>
+    {% block index_js %}
+        <script type="text/javascript" src="{% static 'admin/simpleui-x/js/axios.min.js' %}"></script>
+
+        <!-- 富文本编辑 -->
+        <script type="text/javascript" src="{% static 'admin/luckyui-x/js/marked.min.js' %}"></script>
+
+        <script type="text/javascript"
+                src="{% static 'admin/luckyui-x/js/components.js' %}?_={% get_version %}"></script>
+        <script type="text/javascript" src="{% static 'admin/luckyui-x/js/menu.js' %}?_={% get_version %}"></script>
+        <script type="text/javascript" src="{% static 'luckyui/js/index.js' %}"></script>
+    {% endblock %}
+
+    <script type="text/javascript">
+
+
+        function dragElement(elmnt) {
+            if(!elmnt){
+                return
+            }
+
+            var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            if (document.getElementById(elmnt.id + "header")) {
+                /* 如果存在，header 就是你移动 DIV 的地方：*/
+                document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
+            } else {
+                /* 否则，将 DIV 从 DIV 内的任何位置移动：*/
+                elmnt.onmousedown = dragMouseDown;
+            }
+
+            function dragMouseDown(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // 在启动时获取鼠标光标位置：
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                // 当光标移动时调用一个函数：
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e = e || window.event;
+                e.preventDefault();
+                // 计算新的光标位置：
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                // 设置元素的新位置：
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+                elmnt.style.width = 100 + "px";
+                elmnt.style.height = 100 + "px";
+            }
+
+            function closeDragElement() {
+                /* 释放鼠标按钮时停止移动：*/
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+    </script>
+
+    {% block autoupdate %}
+
+    {% endblock %}
+
+
+{% endblock %}
+{% load_analysis %}
+{% block script %}
+    {#    预留脚本block 可以实现基础该页面，添加自定义脚本#}
+{% endblock %}
+</body>
+</html>

@@ -1,0 +1,63 @@
+{% load i18n %}
+{% load admin_urls static admin_list simpletags %}
+
+<div class="lucky-datepicker-{{ widget.name }}">
+    {% for widget in widget.subwidgets %}
+        {% include "luckyui/forms/widgets/none_input.html" %}
+    {% endfor %}
+
+    <el-date-picker
+            size="small"
+            v-model="datetime_value"
+            value-format="yyyy/MM/dd HH:mm"
+            format="yyyy/MM/dd HH:mm"
+            type="datetime"
+            placeholder="选择日期时间"
+            @change="change_date_time">
+    </el-date-picker>
+</div>
+
+<script type="text/javascript">
+    new Vue({
+        el: '.lucky-datepicker-{{ widget.name }}',
+        data: {
+            datetime_value: '',
+            field_data_id: '',
+            field_time_id: ''
+        },
+        mounted() {
+            this.field_data_id = 'id_' + "{{ widget.name }}" + '_0'
+            this.field_time_id = 'id_' + "{{ widget.name }}" + '_1'
+            this.setup_field_value()
+        },
+        methods: {
+            setup_field_value() {
+                let widget = "{{ widget|safe }}"
+                widget = widget.replaceAll("'", '"')
+                widget = widget.replaceAll("False", 'false')
+                widget = widget.replaceAll("True", 'true')
+                widget = widget.replaceAll("None", '""')
+                {#console.log(widget)#}
+                widget = JSON.parse(widget)
+                {#console.log(widget)#}
+                if (widget.subwidgets.length > 0) {
+                    let date_value = widget.subwidgets[0].value
+                    let time_value = widget.subwidgets[1].value
+                    if (date_value.length > 0 && time_value.length > 0) {
+                        document.getElementById(this.field_data_id).value = date_value
+                        document.getElementById(this.field_time_id).value = time_value
+                        this.datetime_value = date_value + ' ' + time_value
+                        console.log('123')
+                    }
+                }
+                console.log('datetime_value:', this.datetime_value)
+            },
+            change_date_time(e) {
+                if (this.datetime_value.length > 0) {
+                    document.getElementById(this.field_data_id).value = this.datetime_value.split(' ')[0]
+                    document.getElementById(this.field_time_id).value = this.datetime_value.split(' ')[1]
+                }
+            }
+        }
+    })
+</script>

@@ -1,0 +1,33 @@
+{% load i18n %}
+{% load admin_urls static admin_list simpletags %}
+
+<div class="lucky-input-number-{{ widget.name }}" style="display: inline !important;">
+    {% include "luckyui/forms/widgets/none_input.html" %}
+
+    <el-input-number
+            size="small"
+            v-model="number_value"
+            @change="number_change">
+    </el-input-number>
+</div>
+
+<script type="text/javascript">
+
+    new Vue({
+        el: '.lucky-input-number-{{ widget.name }}',
+        data: {
+            number_value: false,
+            field_id: ''
+        },
+        mounted() {
+            this.field_id = 'id_' + "{{ widget.name }}"
+            this.number_value = document.getElementById(this.field_id).value
+        },
+        methods: {
+            number_change(e) {
+                document.getElementById(this.field_id).value = e
+                {#console.log(document.getElementById(this.field_id).value)#}
+            }
+        }
+    })
+</script>

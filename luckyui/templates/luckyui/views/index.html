@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+{% load i18n static simpletags %}
+{# 获取语言设置 由i18n提供 #}
+{% get_current_language as LANGUAGE_CODE %}
+{# 获取语音方向 由i18n提供 #}
+{% get_current_language_bidi as LANGUAGE_BIDI %}
+
+<html lang="{{ LANGUAGE_CODE|default:'en-us' }}" {% if LANGUAGE_BIDI %}dir="rtl" {% endif %}>
+
+<head>
+    <meta charset="UTF-8">
+    {# 多核浏览器，指示优先使用webkit #}
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    {# 移动设备优化 #}
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"/>
+
+    {# css引入 #}
+    {% block css %}
+        {% include 'luckyui/includes/css-part.html' %}
+        <link rel="stylesheet" href="{% static 'luckyui/css/index_base.css' %}">
+    {% endblock %}
+
+    {% block title %}
+        <title>{{ site_title }}</title>
+    {% endblock %}
+</head>
+<body>
+
+{% block menus %}
+    {% autoescape off %}
+        {% menus %}
+    {% endautoescape %}
+{% endblock %}
+
+<div id="main" @click="main_click($event)" v-block>
+    {% block theme_css %}
+        <link v-if="theme && theme!=''" rel="stylesheet" :href="theme">
+
+        {% if "SIMPLEUI_DEFAULT_THEME"|get_config %}
+            <link v-else rel="stylesheet"
+                  href="{% static 'luckyui/theme/' %}{{ "SIMPLEUI_DEFAULT_THEME"|get_config }}">
+        {% endif %}
+    {% endblock %}
+
+    {# 移动设备兼容 菜单使用左侧弹出框 #}
+    <el-drawer :visible.sync="is_show_mobile_menu"
+               :show-close="false">
+
+    </el-drawer>
+
+    <el-container :style="{height: height+'px'}">
+        {# 不是移动端 菜单在左侧 #}
+        <el-aside v-show="!is_mobile" width="auto" class="menu" {% block menu_style %}{% endblock %}>
+            {# logo块 #}
+            {% block logo %}
+                <div class="logo-wrap" v-if="!is_fold_menu">
+                    <div class="float-wrap">
+                        <div class="left">
+                            {% if "SIMPLEUI_LOGO"|get_config %}
+                                <img src="{{ "SIMPLEUI_LOGO"|get_config |safe }}">
+                            {% else %}
+                                <img src="{% static 'admin/simpleui-x/img/logo.png' %}">
+                            {% endif %}
+                        </div>
+                        <div class="left">
+                            <span>{{ site_header }}</span>
+                        </div>
+                    </div>
+                </div>
+            {% endblock %}
+
+            <transition name="el-zoom-in-center">
+                <multiple-menu
+                        :menus="menus"
+                        :menu-active="menuActive"
+                        :fold="is_fold_menu"
+                ></multiple-menu>
+            </transition>
+        </el-aside>
+
+        <el-container>
+            {% block header %}
+                {# 导航栏 #}
+                <el-header class="navbar" style="font-size: 12px;padding: 10px;height: auto">
+                    <div class="float-wrap">
+                        <div class="left">
+                            <el-button v-waves circle icon="fas fa-bars"
+                                       style="margin-right: 10px;border: none" @click="foldClick()"></el-button>
+                            {% block breadcrumb %}
+                                <el-breadcrumb v-if="!is_mobile" style="display: inline-block;" separator="/">
+                                    {% verbatim myclode %}
+                                        <el-breadcrumb-item>
+                                            <i :class="menus[0].icon"
+                                               :key="menus[0].name">
+                                            </i>
+                                            <span v-text="menus[0].name">}</span>
+                                        </el-breadcrumb-item>
+                                        <el-breadcrumb-item v-for="item in breadcrumbs"
+                                                            :key="item">
+                                            <span :class="get_icon(item.name,item.icon)"></span>
+                                            <span v-text="item.name"></span>
+                                        </el-breadcrumb-item>
+                                    {% endverbatim myclode %}
+                                </el-breadcrumb>
+                            {% endblock %}
+                        </div>
+                    </div>
+                </el-header>
+            {% endblock %}
+            <el-main>
+                <span>{{ site_header }}</span>
+                <el-tabs>
+
+                </el-tabs>
+            </el-main>
+        </el-container>
+    </el-container>
+
+</div>
+
+{% block base_script %}
+
+    {% include 'luckyui/includes/js-part.html' %}
+    <script type="text/javascript"
+            src="{% static 'admin/simpleui-x/automatic/segment.js' %}?_={% get_version %}"></script>
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/js/cookie.js' %}?_={% get_version %}"></script>
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/js/menu.js' %}?_={% get_version %}"></script>
+    <script type="text/javascript" src="{% static 'luckyui/js/index.js' %}"></script>
+{% endblock %}
+</body>
+
+</html>

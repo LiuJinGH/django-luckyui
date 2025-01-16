@@ -1,0 +1,39 @@
+{% load i18n %}
+{% load admin_urls static admin_list simpletags %}
+
+<script type="text/css">
+    .aligned .vCheckboxLabel {
+        padding: 0;
+    }
+</script>
+
+<div class="lucky-switch-{{ widget.name }}" style="display: inline !important;">
+    {% include "luckyui/forms/widgets/none_input.html" %}
+
+    <el-switch
+            v-model="switch_value"
+            @change="switch_change">
+    </el-switch>
+</div>
+
+<script type="text/javascript">
+
+    new Vue({
+        el: '.lucky-switch-{{ widget.name }}',
+        data: {
+            switch_value: false,
+            field_id: ''
+        },
+        mounted() {
+            this.field_id = 'id_' + "{{ widget.name }}"
+            this.switch_value = document.getElementById(this.field_id).checked
+        },
+        methods: {
+            switch_change(e) {
+                document.getElementById(this.field_id).checked = e
+                {#console.log(e)#}
+                console.log(document.getElementById(this.field_id).checked)
+            }
+        }
+    })
+</script>

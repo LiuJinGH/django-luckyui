@@ -1,0 +1,109 @@
+
+#result_list {
+  table-layout: auto;
+
+  .column-item_operate {
+    min-width: 100px;
+    width: 1.5em;
+    position: sticky;
+    right: 0;
+    z-index: 88;
+
+  }
+  .field-item_operate{
+    min-width: 100px;
+    width: auto;
+    position: sticky;
+    right: 0;
+    background-color: #ffffff !important; /* 或者使用其他颜色以区分滚动背景 */
+    z-index: 88;
+
+  }
+}
+
+.el-range-input {
+  padding: 0 !important;
+}
+
+.simpleui-form-item {
+  .el-input__inner {
+    padding-left: 30px !important;
+  }
+}
+
+.el-input__inner {
+  padding-left: 10px;
+}
+
+#content {
+  position: relative;
+}
+
+#changelist {
+  overflow-x: scroll;
+
+  #changelist-form {
+
+    .lucky-actions {
+      padding: 15px 0;
+      display: flex;
+      flex-direction: column;
+
+      .act-line {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+
+        &.bor-btm {
+          border-bottom: 2px solid #e4e7ed;
+        }
+
+        .el-tabs__header {
+          margin: 0;
+        }
+
+        .el-tabs__item {
+          padding: 0;
+        }
+      }
+
+      .act-line + .act-line {
+        margin-top: 10px;
+      }
+    }
+  }
+}
+
+.object-tools {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  height: 50px;
+  z-index: 2;
+}
+
+.object-tools .import_link, .object-tools .export_link {
+  color: white !important;
+}
+
+.dash-bar {
+  display: flex;
+
+}
+
+.dash-bar .dash-item + .dash-item {
+  margin-left: 20px;
+}
+
+#content-main {
+  display: flex;
+  flex-direction: row;
+
+  #lucky-side-nav {
+    padding-left: 10px;
+  }
+
+  #changelist {
+    flex-grow: 1;
+  }
+}

@@ -1,0 +1,193 @@
+<!-- 引用的是simpleUI中的login页面 -->
+{% extends "admin/login.html" %}
+{% load i18n admin_urls static admin_modify simpletags luckytags %}
+
+{% block icon %}
+    <link rel="shortcut icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'luckyui/css/login.css' %}?">
+{% endblock %}
+
+{% block bg %}
+    <style type="text/css">
+        .bg {
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            background-image: url({% static 'luckyui/img/index_bg_img.png' %});
+            background-size: 100% 100%;
+        }
+    </style>
+{% endblock %}
+
+{% block head %}
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/js/axios.min.js' %}"></script>
+{% endblock %}
+
+
+{% block main %}
+    <div class="login-container">
+        {# 左部内容块 #}
+        <div class="login-img-container">
+            <div class="login-text">
+                <text class="text_1">welcome！</text>
+                <text class="text_2">欢迎来到{{ site_header }}</text>
+            </div>
+
+            <div class="login-img">
+                <img src="{% static 'luckyui/img/login_center_img.png' %}" alt="登录页背景图">
+            </div>
+        </div>
+
+        <div class="login-main-container">
+            <div class="login-main">
+                {% block logo %}
+                    <div class="logo">
+                        {% if "SIMPLEUI_LOGO"|get_config %}
+                            <img src="{{ "SIMPLEUI_LOGO"|get_config |safe }}">
+                        {% else %}
+                            <img src="{% static 'admin/simpleui-x/img/logo.png' %}">
+                        {% endif %}
+                    </div>
+                {% endblock %}
+
+                {% block header %}
+                    <div class="header-content">
+                        欢迎登录{{ site_header }}
+                    </div>
+                {% endblock %}
+
+                {% block errors %}
+                    <div class="error-list">
+                        {% if request.GET.message %}
+                            <el-alert
+                                    title="{{ request.GET.message }}"
+                                    type="error">
+                            </el-alert>
+                        {% endif %}
+
+                        {% if form.non_field_errors %}
+                            {% for error in form.non_field_errors %}
+                                <el-alert
+                                        title="{{ error }}"
+                                        type="error">
+                                </el-alert>
+                            {% endfor %}
+                        {% endif %}
+
+                        {% if form.errors and not form.non_field_errors %}
+                            <div class="errornote">
+                                {% if form.errors.captcha %}
+                                    <el-alert title="{{ form.errors.captcha.0 |safe }}" type="error"></el-alert>
+                                {% elif form.errors.items|length == 1 %}
+                                    <el-alert title="{% trans "Please correct the error below." %}"
+                                              type="error"></el-alert>
+                                {% else %}
+                                    <el-alert title="{% trans "Please correct the errors below." %}"
+                                              type="error"></el-alert>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endblock %}
+
+                {% block form %}
+                    <form class="simpleui-form" action="{{ app_path }}" method="post" id="login-form">
+                        {% csrf_token %}
+                        <div class="simpleui-input-inline">
+                            <div class="form-name">用户名</div>
+                            <el-input v-model="username" name="username" id="username"
+                                      placeholder="请输入用户名"></el-input>
+                        </div>
+
+                        <div class="simpleui-input-inline">
+                            <div class="form-name">密码</div>
+                            <el-input type="password" v-model="password" name="password" id="password"
+                                      placeholder="请输入密码"></el-input>
+                        </div>
+
+                        <div class="simpleui-input-inline">
+                            <div class="form-name">验证码</div>
+                            <div class="captcha-container">
+                                {{ form.captcha }}
+                            </div>
+                        </div>
+
+                        {% url 'admin_password_reset' as password_reset_url %}
+                        {% if password_reset_url %}
+                            <div class="password-reset-link">
+                                <a class="forgot-password"
+                                   href="{{ password_reset_url }}">{% trans 'Forgotten your password or username?' %}</a>
+                            </div>
+                        {% endif %}
+                        <div class="simpleui-input-inline login-btn">
+                            <el-button :icon="loading?'el-icon-loading':''" @click="login()"
+                                       type="primary">{% trans 'Log in' %}</el-button>
+                        </div>
+
+                        <input type="hidden" name="next" value="{{ next }}"/>
+                    </form>
+                {% endblock %}
+            </div>
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block login_js %}
+    {{ block.super }}
+
+    <script>
+        document.querySelector('.captcha').setAttribute('alt', '点击更换验证码');
+        document.querySelector('.captcha').setAttribute('title', '点击更换验证码');
+        document.addEventListener('DOMContentLoaded', function () {
+            // 获取 CSRF token
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            // 为验证码图片添加点击事件
+            document.querySelector('.captcha').addEventListener('click', function () {
+                axios({
+                    method: 'get',
+                    url: '/captcha/refresh/',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                }).then(function (response) {
+                    const result = response.data;
+                    document.querySelector('.captcha').src = result['image_url'];
+                    document.querySelector('#id_captcha_0').value = result['key'];
+                }).catch(function (error) {
+                });
+            });
+
+            // 登录按钮点击事件
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const captchaInput = document.getElementById('id_captcha_1');
+
+            // 监听整个文档的 keydown 事件
+            document.addEventListener('keydown', function (event) {
+                // 检查是否按下了回车键
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // 阻止默认行为
+
+                    if (usernameInput.value && passwordInput.value && captchaInput.value) {
+                        loginApp.login();
+                    } else {
+                        // 如果有任何输入框为空，则将焦点移动到下一个输入框
+                        if (!usernameInput.value) {
+                            usernameInput.focus();
+                        } else if (!passwordInput.value) {
+                            passwordInput.focus();
+                        } else if (!captchaInput.value) {
+                            captchaInput.focus();
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}

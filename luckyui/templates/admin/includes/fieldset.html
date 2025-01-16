@@ -1,0 +1,86 @@
+{% load simpletags %}
+
+<fieldset class="module aligned {{ fieldset.classes }}">
+    <div class="fieldset-header">
+        {% if fieldset.name %}<h3>{{ fieldset.name }}</h3>{% endif %}
+        {% if fieldset.description %}
+            <div class="description">{{ fieldset.description|safe }}</div>
+        {% endif %}
+    </div>
+
+    {% for line in fieldset %}
+        <div class="form-row{% if line.fields|length_is:'1' and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
+            {% if line.fields|length_is:'1' %}
+                {{ line.errors }}
+            {% endif %}
+
+            {% for field in line %}
+                <div class="fieldBox{% if field.is_checkbox %} checkbox-row{% else %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% if not field.is_readonly and field.errors %} errors{% endif %}{% if field.field.is_hidden %} hidden{% endif %}{% endif %}">
+                    {# field 标题 #}
+                    {{ field.label_tag }}
+                    {# 内容 #}
+                    <div class="fieldBox-content">
+                        <div style="display: flex; flex-direction: column;">
+                            {% if field.is_readonly %}
+                                {# 只读field #}
+                                {% if field.is_richtext %}
+                                    <style type="text/css">
+                                        #lucky_richtext_{{ field.field.name }} {
+                                            width: 375px;
+                                            height: 750px;
+                                            overflow: auto;
+                                            resize: both;
+                                            cursor: ew-resize;
+                                            border: 1px solid #ccc;
+
+                                            img {
+                                                width: 100%;
+                                                object-fit: contain;
+                                            }
+                                        }
+                                    </style>
+                                    {% if field.is_iframe %}
+                                        <iframe style="width: 1080px; height: 750px;"
+                                                srcdoc="{{ field.contents | safe }}"></iframe>
+                                    {% else %}
+                                        <div id="lucky_richtext_{{ field.field.name }}">
+                                            <div v-html="'{{ field.contents | safe }}'"></div>
+                                        </div>
+                                    {% endif %}
+
+                                    <script type="text/javascript">
+                                        new Vue({
+                                            el: "#lucky_richtext_{{ field.field.name }}",
+                                            methods: {}
+                                        })
+                                    </script>
+                                {% else %}
+                                    <div class="readonly"
+                                         style="width: 274px; word-wrap: break-word; word-break:break-all;"> {{ field.contents }}</div>
+                                {% endif %}
+                            {% else %}
+                                {# 可编辑field #}
+                                <div style="display: flex; flex-direction: row; align-items: center;">
+                                    {{ field.field | get_value }}
+                                </div>
+                            {% endif %}
+
+                            {% if field.field.help_text and not field.is_readonly %}
+                                <div class="help">{{ field.field.help_text|safe }}</div>
+                            {% endif %}
+                        </div>
+
+                        {% if not line.fields|length_is:'1' and not field.is_readonly %}
+                            <div style="display: flex; flex-direction: column; padding-top: 3px;">
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+</fieldset>
+
+

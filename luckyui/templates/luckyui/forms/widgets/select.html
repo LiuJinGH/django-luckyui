@@ -1,0 +1,51 @@
+{% load i18n %}
+{% load admin_urls static admin_list simpletags %}
+
+<div class="lucky-select-{{ widget.name }}" style="display: inline !important;">
+    {% include "luckyui/forms/widgets/none_input.html" %}
+
+    <el-select filterable size="small" v-model="select_value" @change="select_change" >
+        {% for group_name, group_choices, group_index in widget.optgroups %}
+            {% for option in group_choices %}
+                <el-option
+                        key="{{ option.value|stringformat:'s' }}"
+                        label="{{ option.label }}"
+                        value="{{ option.value|stringformat:'s' }}">
+                </el-option>
+            {% endfor %}
+
+        {% endfor %}
+    </el-select>
+</div>
+
+<script type="text/javascript">
+
+    new Vue({
+        el: '.lucky-select-{{ widget.name }}',
+        data: {
+            select_value: '',
+            field_id: ''
+        },
+        mounted() {
+            this.field_id = 'id_' + "{{ widget.name }}"
+            let value = "{{ widget.value|safe }}"
+            value = value.replaceAll("'", '"')
+            let select_value = JSON.parse(value)
+            console.log('lucky-select-{{ widget.name }} mounted')
+            console.log(select_value)
+
+            if (select_value.length > 0) {
+                this.select_value = select_value[0]
+                document.getElementById(this.field_id).value = select_value
+            }
+
+        },
+        methods: {
+            select_change(e) {
+                console.log('lucky-select-{{ widget.name }}')
+                console.log(e)
+                document.getElementById(this.field_id).value = [e]
+            }
+        }
+    })
+</script>

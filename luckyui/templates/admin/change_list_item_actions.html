@@ -1,0 +1,79 @@
+{% load i18n static simpletags %}
+
+<style type="text/css">
+    .change_list_item_actions_{{ model.id }} {
+        justify-content: flex-start !important;
+        width: auto !important;
+        background: none !important;
+    }
+</style>
+
+<div class="change_list_item_actions_{{ model.id }} actions">
+
+    {% block extra_buttons_before %}
+    {% endblock %}
+
+    {% if item_action_detail_btn %}
+        {% block item_action_detail_btn %}
+            <el-button class="stop-submit" type="text " @click="jump_detail()">
+                详情
+            </el-button>
+        {% endblock %}
+    {% endif %}
+
+    {% if item_action_edit_btn %}
+        {% block item_action_edit_btn %}
+            <el-button class="stop-submit" type="text" @click="jump_change()">
+                编辑
+            </el-button>
+        {% endblock %}
+    {% endif %}
+
+    {#  默认的Action  #}
+    {% for field in item_action_list %}
+        <el-button :eid="customButton.{{ field.0 }}.eid"
+                   :icon="customButton.{{ field.0 }}.icon" :style="customButton.{{ field.0 }}.style"
+                   :confirm="customButton.{{ field.0 }}.confirm"
+                   :type="customButton.{{ field.0 }}.type" data-name="{{ field.0 }}"
+                   data-model-id="{{ model.id }}">{{ field.1 }}
+        </el-button>
+    {% endfor %}
+
+    {% block extra_buttons_after %}
+    {% endblock %}
+
+    {% block item_actions_layer %}
+    {% endblock %}
+</div>
+
+{% block extrajs %}
+    {#  这里还没有想到复用机制  #}
+    <script type="text/javascript">
+        new Vue({
+            el: '.change_list_item_actions_{{ model.id }}',
+            data() {
+                return {
+                    customButton: _action.customButton
+                }
+            },
+            methods: {
+                jump_detail() {
+                    let nav_url = '{{ detail_url }}'
+                    if(parent.window.app){
+                        parent.window.app.tab_navigate_to(nav_url, window)
+                    }else{
+                        window.location.href = nav_url
+                    }
+                },
+                jump_change() {
+                    let nav_url = '{{ change_url }}'
+                    if(parent.window.app){
+                        parent.window.app.tab_navigate_to(nav_url, window)
+                    }else{
+                        window.location.href = nav_url
+                    }
+                }
+            }
+        })
+    </script>
+{% endblock %}

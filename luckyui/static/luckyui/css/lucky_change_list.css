@@ -1,0 +1,84 @@
+#result_list {
+  table-layout: auto;
+}
+#result_list .column-item_operate {
+  min-width: 100px;
+  width: 1.5em;
+  position: sticky;
+  right: 0;
+  z-index: 88;
+}
+#result_list .field-item_operate {
+  min-width: 100px;
+  width: auto;
+  position: sticky;
+  right: 0;
+  background-color: #ffffff !important;
+  /* 或者使用其他颜色以区分滚动背景 */
+  z-index: 88;
+}
+.el-range-input {
+  padding: 0 !important;
+}
+.simpleui-form-item .el-input__inner {
+  padding-left: 30px !important;
+}
+.el-input__inner {
+  padding-left: 10px;
+}
+#content {
+  position: relative;
+}
+#changelist {
+  overflow-x: scroll;
+}
+#changelist #changelist-form .lucky-actions {
+  padding: 15px 0;
+  display: flex;
+  flex-direction: column;
+}
+#changelist #changelist-form .lucky-actions .act-line {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+#changelist #changelist-form .lucky-actions .act-line.bor-btm {
+  border-bottom: 2px solid #e4e7ed;
+}
+#changelist #changelist-form .lucky-actions .act-line .el-tabs__header {
+  margin: 0;
+}
+#changelist #changelist-form .lucky-actions .act-line .el-tabs__item {
+  padding: 0;
+}
+#changelist #changelist-form .lucky-actions .act-line + .act-line {
+  margin-top: 10px;
+}
+.object-tools {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  height: 50px;
+  z-index: 2;
+}
+.object-tools .import_link,
+.object-tools .export_link {
+  color: white !important;
+}
+.dash-bar {
+  display: flex;
+}
+.dash-bar .dash-item + .dash-item {
+  margin-left: 20px;
+}
+#content-main {
+  display: flex;
+  flex-direction: row;
+}
+#content-main #lucky-side-nav {
+  padding-left: 10px;
+}
+#content-main #changelist {
+  flex-grow: 1;
+}
+/*# sourceMappingURL=lucky_change_list.css.map */

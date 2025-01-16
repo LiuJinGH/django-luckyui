@@ -1,0 +1,108 @@
+{% load i18n admin_urls static admin_modify simpletags %}
+
+<style>
+    .el-tabular {
+        padding: 10px 0 !important;
+
+        .table-d {
+            margin-top: 10px;
+        }
+
+        .operator_d {
+            display: flex;
+            justify-content: flex-start;
+        }
+    }
+</style>
+{# inline element表单 仅在detail_view使用 #}
+<div class="el-tabular" id="{{ inline_admin_formset.formset.prefix }}-group">
+    {# 自定义按钮 #}
+    {% block custom_button %}
+
+        {% if inline_admin_formset.has_add_permission and inline_admin_formset.opts.has_registered_model %}
+            {# 添加inline实例 按钮 需要有添加权限 #}
+            <a class="related-widget-wrapper-link add-related"
+               id="add_id_{{ inline_admin_formset.opts.opts.model_name }}"
+               data-popup="yes"
+               href="{% url inline_admin_formset.opts.opts|admin_urlname:'add' %}?_to_field=id&_popup=1&{{ opts.model_name }}={{ original.id }}"
+               title="{% blocktranslate %}Add another {{ inline_admin_formset.model }}{% endblocktranslate %}">
+                <button class="el-button el-button--primary el-button--small">
+                    <i class="el-icon-plus"></i>
+                    {% translate 'Add' %}
+                </button>
+            </a>
+            {# 打开弹窗，然后关闭时，需要通过这个id来定位，不然就关闭不了弹窗 #}
+            <input id="id_{{ inline_admin_formset.opts.opts.model_name }}" style="display: none"/>
+        {% endif %}
+    {% endblock %}
+
+    {% block el_table_view %}
+        <div class="table-d">
+            <el-table border :data="tab_data">
+                {% for tab_col_item in inline_admin_formset.table_column %}
+                    <el-table-column label="{{ tab_col_item.label }}" prop="{{ tab_col_item.key }}">
+                        <template slot-scope="scope">
+                            <div v-html="scope.row.{{ tab_col_item.key }}"></div>
+                        </template>
+                    </el-table-column>
+                {% endfor %}
+                <el-table-column label="操作">
+                    <template slot-scope="scope">
+                        <div class="operator_d"></div>
+                        {% block custom_inline_action %}
+                            <div style="display: flex; flex-shrink: 0;">
+                                {# inline 查看按钮 需要有查看权限 #}
+                                <el-button v-if="scope.row.detail_url" type="text"
+                                           @click="jump_item_detail(scope.row.detail_url)">
+                                    {% translate "View" %}
+                                </el-button>
+                                <el-button v-if="scope.row.change_url" type="text"
+                                           @click="jump_item_change(scope.row.change_url)">
+                                    {% translate "Change" %}
+                                </el-button>
+                                <a class="related-widget-wrapper-link add-related" style="margin-left: 10px;"
+                                   id="delete_{{ inline_admin_formset.opts.opts.model_name }}"
+                                   data-popup="yes"
+                                   :href="scope.row.delete_url"
+                                   title="{% blocktranslate %}Delete {{ inline_admin_formset.model }}{% endblocktranslate %}">
+                                    <el-button type="text">
+                                        {% translate 'Delete' %}
+                                    </el-button>
+                                </a>
+                            </div>
+                        {% endblock %}
+
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+
+    {% endblock %}
+</div>
+
+<script type="text/javascript">
+
+    new Vue({
+        el: '#{{ inline_admin_formset.formset.prefix }}-group',
+        data: {
+            tab_data: {{ inline_admin_formset.table_data|safe }}
+        },
+        methods: {
+            jump_item_detail(detail_url) {
+                if (parent.window.app) {
+                    parent.window.app.tab_navigate_to(detail_url, window)
+                } else {
+                    window.location.href = detail_url
+                }
+            },
+            jump_item_change(change_url) {
+                console.log('change_url:', change_url)
+                if (parent.window.app) {
+                    parent.window.app.tab_navigate_to(change_url, window)
+                } else {
+                    window.location.href = change_url
+                }
+            }
+        }
+    })
+</script>

@@ -1,0 +1,102 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list simpletags lucky_admin_list %}
+
+{% block extrahead %}
+    {{ block.super }}
+
+    {# 实现在列表页面可以悬停查看预览图片。#}
+    {% include 'admin/includes/change_list_img.html' %}
+
+    <link rel="stylesheet" href="{% static "luckyui/css/lucky_change_list.css" %}">
+
+{% endblock %}
+
+{% block content %}
+
+    {# 这里保留是为了兼容导入导出的逻辑 #}
+    {% block object-tools %}
+        <ul class="object-tools">
+            {% block object-tools-items %}
+                {% if has_add_permission %}
+                    {{ block.super }}
+                {% endif %}
+            {% endblock %}
+        </ul>
+    {% endblock %}
+
+    <div id="content-main">
+
+        {% block side-nav %}
+            {% if list_side_nav_enable %}
+                <div id="lucky-side-nav">
+                    <p>side-nav</p>
+                </div>
+            {% endif %}
+        {% endblock %}
+
+        <div id="changelist" class="module{% if cl.has_filters %} filtered{% endif %}">
+
+            {% if cl.formset.errors %}
+                <p class="errornote">
+                    {% if cl.formset.total_error_count == 1 %}{% trans "Please correct the error below." %}{% else %}
+                        {% trans "Please correct the errors below." %}{% endif %}
+                </p>
+                {{ cl.formset.non_form_errors }}
+            {% endif %}
+
+            {# 搜索框 #}
+            {% block search %}{% search_form cl %}{% endblock %}
+
+            {# 时间框 这块基本不用了 #}
+            {% block date_hierarchy %}{% date_hierarchy cl %}{% endblock %}
+
+            {# 编辑表单 后面去掉表单的编辑功能 #}
+            <form id="changelist-form" method="post" {% if cl.formset.is_multipart %}
+                  enctype="multipart/form-data" {% endif %} novalidate>
+                {% csrf_token %}
+                <!--Compatible with django 3.2 x-->
+                <button style="display:none" name="index"></button>
+
+                {% if cl.formset %}
+                    <div>{{ cl.formset.management_form }}</div>
+                {% endif %}
+
+                {# 表单按钮事件 #}
+                {% block admin_actions %}
+                    {% admin_actions %}
+                {% endblock %}
+
+                {# 表单本身 #}
+                {% block lucky_result_list %}
+                    {% lucky_result_list cl %}
+                {% endblock %}
+            </form>
+
+            {# 缺省图 #}
+            {% block default_list %}
+
+            {% endblock %}
+
+            {# 分页的组件 #}
+            {% block pagination %}
+                {% pagination cl %}
+            {% endblock %}
+        </div>
+
+    </div>
+
+    {% block extrajs %}
+        <script type="text/javascript">
+            $(".object-tools").hide().find('li a').each(function () {
+                _action.exts.push({
+                    name: $(this).text(),
+                    url: $(this).attr('href')
+                })
+            })
+
+            if (parent.addEvent) {
+                parent.addEvent('title', '{% get_verbose_name_plural %}')
+            }
+        </script>
+    {% endblock %}
+{% endblock %}

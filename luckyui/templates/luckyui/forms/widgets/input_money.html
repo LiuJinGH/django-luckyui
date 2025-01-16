@@ -1,0 +1,36 @@
+{% load i18n %}
+{% load admin_urls static admin_list simpletags %}
+
+<div class="lucky-input-money-{{ widget.name }}" style="display: inline !important;">
+    {% include "luckyui/forms/widgets/none_input.html" %}
+
+    <el-input-number
+            :precision="2"
+            size="small"
+            v-model="money_value"
+            @change="money_change">
+    </el-input-number>
+</div>
+
+<script type="text/javascript">
+
+    new Vue({
+        el: '.lucky-input-money-{{ widget.name }}',
+        data: {
+            money_value: 0,
+            field_id: ''
+        },
+        mounted() {
+            this.field_id = 'id_' + "{{ widget.name }}"
+            this.money_value = document.getElementById(this.field_id).value
+            this.money_value = this.money_value/100.0
+            this.money_value = this.money_value.toFixed(2)
+        },
+        methods: {
+            money_change(e) {
+                document.getElementById(this.field_id).value = Math.round(e*100.0)
+                {#console.log(document.getElementById(this.field_id).value)#}
+            }
+        }
+    })
+</script>

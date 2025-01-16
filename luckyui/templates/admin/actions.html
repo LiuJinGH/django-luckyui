@@ -1,0 +1,888 @@
+{% load i18n %}
+{% load admin_urls static admin_list simpletags %}
+
+{% block lucky_actions %}
+    {% if not actions_off %}
+    <div class="actions lucky-actions">
+
+        <input type="hidden" name="action" value=""/>
+
+        <div class="act-line">
+            <div>
+
+                {% block custom_actions %}
+                {% endblock %}
+
+                {% block custom_add_actions %}
+                    {% if has_add_permission %}
+                        {% url cl.opts|admin_urlname:'add' as add_url %}
+                        <el-button class="stop-submit" size="small" type="primary" icon="el-icon-plus" data-name="add_item"
+                                   @click="jump_add('{% add_preserved_filters add_url is_popup to_field %}')">
+                            {% trans 'Add' %}
+                        </el-button>
+                    {% endif %}
+                {% endblock %}
+
+                {% block custom_after_actions %}
+                {% endblock %}
+
+                {% block custom_screen_actions %}
+                {% endblock %}
+
+                {% for field in action_form.fields.action.choices %}
+
+                    {% if field.0 %}
+
+                        {% if field.0 == 'delete_selected' %}
+                            <!-- 删除按钮 -->
+                            {% block custom_delete_actions %}
+                                <el-button size="small" type="danger" data-name="{{ field.0 }}" class="stop-submit"
+                                           icon="el-icon-delete"
+                                           @click="delSelected('{{ field.0 }}')">{% trans 'Delete' %}</el-button>
+                            {% endblock %}
+
+                            <input type="hidden" name="select_across" v-model="select_across" value="0"
+                                   class="select-across">
+
+                        {% else %}
+                            <input type="hidden" name="select_across" v-model="select_across" value="0"
+                                   class="select-across">
+                            <input type="hidden" name="file_format" v-model="file_format">
+
+                            {% if field.0 == 'export_admin_action' %}
+                                <el-select size="small" filterable v-model="file_format" style="width: 80px;">
+                                    <el-option
+                                            v-for="item in options"
+                                            :key="item.value"
+                                            :label="item.label"
+                                            :value="item.value">
+                                    </el-option>
+                                </el-select>
+                                <el-button size="small" icon="fas fa-download"
+                                           data-name="{{ field.0 }}">{{ field.1 }}</el-button>
+                            {% elif field.0 == 'lucky_export_admin_action' %}
+                            {% else %}
+                                <el-button v-if="!customButton.{{ field.0 }}.show_in_item"
+                                           size="small" plain
+                                           :eid="customButton.{{ field.0 }}.eid"
+                                           :confirm="customButton.{{ field.0 }}.confirm"
+                                           :icon="customButton.{{ field.0 }}.icon" :style="customButton.{{ field.0 }}.style"
+                                           :type="customButton.{{ field.0 }}.type" data-name="{{ field.0 }}">{{ field.1 }}
+                                </el-button>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+
+                {% if cl.formset and cl.result_count %}
+                    <input type="hidden" name="_save" value="{% trans 'Save' %}"/>
+                    <el-button size="small" icon="el-icon-circle-check" type="success"
+                               @click="formSubmit()">{% trans 'Save' %}</el-button>
+                {% endif %}
+
+                {% block actions-counter %}
+                    {% if actions_selection_counter %}
+                        <span class="action-counter"
+                              data-actions-icnt="{{ cl.result_list|length }}">{{ selection_note }}</span>
+
+                        {% if cl.result_count != cl.result_list|length %}
+                            <span class="all">{{ selection_note_all }}</span>
+                            <span class="question">
+                            <a href="#"
+                               onclick="selectAll()"
+                               title="{% trans "Click here to select the objects across all pages" %}">{% blocktrans with cl.result_count as total_count %}
+                                选择所有 {{ total_count }} {{ module_name }}{% endblocktrans %}</a>
+                        </span>
+                            <span class="clear">
+                            <a href="#" onclick="unSelect()">{% trans "Clear selection" %}</a>
+                        </span>
+                        {% endif %}
+                    {% endif %}
+                {% endblock %}
+            </div>
+
+            <el-button-group size="small" class="btn-group">
+                {% if enable_list_card_switch %}
+                    <el-tooltip content="列表/卡片" placement="top">
+                        <a href="javascript:;" @click="switch_list_or_cell()"
+                           class="el-button el-button--default el-button--small">
+                            <span class="" v-if="list_type=='card'"><i class="fa-solid fa-list"></i></span>
+                            <span class="" v-if="list_type=='list'"><i class="fa-solid fa-grid-2"></i></span>
+                        </a>
+                    </el-tooltip>
+                {% endif %}
+
+                {% if cl.search_fields or cl.has_filters %}
+                    <el-tooltip content="搜索栏" placement="top">
+                        <a href="javascript:;" @click="searchDisplay()"
+                           class="el-button el-button--default el-button--small">
+                            <span class="fas fa-search"> </span>
+                        </a>
+                    </el-tooltip>
+                {% endif %}
+
+                <el-tooltip :content="item.name" placement="top" v-for="item in exts" :key="item.name">
+                    <a href="javascript:;"
+                       class="el-button el-button--default el-button--small"
+                       @click="extClick(item)">
+                        <span :class="getIcon(item.name)"></span>
+                    </a>
+                </el-tooltip>
+
+                <el-tooltip content="刷新" placement="top">
+                    <a href="javascript:;" @click="reload()" class="el-button el-button--default el-button--small"><span
+                            class="fas fa-sync-alt"></span></a>
+                </el-tooltip>
+
+                <el-tooltip content="新标签页" placement="top">
+                    <a href="javascript:;" @click="openNewPage()"
+                       class="el-button el-button--default el-button--small"><span
+                            class="fas fa-external-link-square"></span></a>
+                </el-tooltip>
+
+                <el-tooltip content="自定义表头" placement="top">
+                    <a href="javascript:;" @click="openListDisplay()" class="el-button el-button--default el-button--small">
+                        <span class=""><i class="el-icon-edit"></i></span>
+                    </a>
+                </el-tooltip>
+
+            </el-button-group>
+        </div>
+
+        {% block custom_act_lines %}
+
+        {% endblock %}
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block custom_layer %}
+
+{% endblock %}
+
+<div id="layer_app">
+    <el-dialog
+            modal
+            :title="title"
+            :visible.sync="visible"
+            :width="layer.width||'50%'">
+        <el-alert v-if="layer.tips" :title="layer.tips" type="success" :closable="true"></el-alert>
+
+        <el-form ref="form"
+                 :model="params"
+                 :label-width="layer.labelWidth||'80px'"
+                 :label-position="layer.labelPosition||'left'"
+                 size="small">
+            <el-form-item v-for="item in params" :label="item.label"
+                          :rules="[{ required: item.require||false, trigger: 'blur' }]">
+                <el-select v-if="item.type=='select'"
+                           :style="{width:item.width}"
+                           :size="item.size"
+                           :filterable="item.filterable"
+                           :remote="item.remote"
+                           :remote-method="(query)=>{select_remote_method(query, item)}"
+                           @focus="(query)=>{select_remote_method('', item)}"
+                           :loading="item.loading"
+                           v-model="item.value">
+                    <el-option
+                            v-for="node in item.options"
+                            :key="node.key"
+                            :label="node.label"
+                            :value="node.key">
+                    </el-option>
+                </el-select>
+
+                <el-date-picker
+                        v-else-if="item.type=='date'"
+                        :style="{width:item.width}"
+                        :size="item.size"
+                        v-model="item.value"
+                        type="date">
+                </el-date-picker>
+
+                <el-date-picker
+                        v-else-if="item.type=='datetime'"
+                        :style="{width:item.width}"
+                        :size="item.size"
+                        v-model="item.value"
+                        type="datetime">
+                </el-date-picker>
+
+                <el-rate
+                        v-else-if="item.type=='rate'"
+                        :style="{width:item.width}"
+                        :size="item.size"
+                        v-model="item.value">
+                </el-rate>
+                <el-color-picker
+                        v-else-if="item.type=='color'"
+                        :style="{width:item.width}"
+                        :size="item.size"
+                        v-model="item.value">
+                </el-color-picker>
+                <el-slider
+                        v-else-if="item.type=='slider'"
+                        :style="{width:item.width}"
+                        :size="item.size"
+                        v-model="item.value">
+                </el-slider>
+                <el-switch
+                        v-else-if="item.type=='switch'"
+                        :style="{width:item.width}"
+                        :size="item.size"
+                        v-model="item.value">
+                </el-switch>
+                <el-input-number
+                        v-else-if="item.type=='input_number'"
+                        :style="{width:item.width}"
+                        :size="item.size"
+                        v-model="item.value">
+                </el-input-number>
+
+                <el-link v-else-if="item.type=='link'"  :href="item.link" target="_blank" type="primary"
+                                 >点击授权</el-link>
+
+                <el-checkbox-group
+                        v-else-if="item.type=='checkbox'"
+                        :style="{width:item.width}"
+                        :size="item.size"
+                        v-model="item.value">
+
+                    <el-checkbox v-for="node in item.options" v-model="node.key" :label="node.label"
+                                 :key="node.key"></el-checkbox>
+
+                </el-checkbox-group>
+
+                <el-radio-group
+                        v-else-if="item.type=='radio'"
+                        :style="{width:item.width}"
+                        :size="item.size"
+                        v-model="item.value">
+
+                    <el-radio v-for="node in item.options" :label="node.key"
+                              :key="node.key">{% verbatim %} {{ node.label }} {% endverbatim %}
+                    </el-radio>
+
+                </el-radio-group>
+
+                <input v-else-if="item.type=='file'" type="file" :ref="item.key" :accept="item.accept?item.accept:'*'"/>
+
+                <el-input v-else v-model="item.value" :type="item.type" :style="{width:item.width}"
+                          :size="item.size"></el-input>
+            </el-form-item>
+        </el-form>
+
+        <span slot="footer" class="dialog-footer">
+            <el-button size="small" @click="visible = false" v-text="layer.cancel_button||'取消'"></el-button>
+            <el-button size="small" type="primary" @click="layerSubmit()" :loading="loading"
+                       v-text="layer.confirm_button||'确定'"></el-button>
+        </span>
+    </el-dialog>
+</div>
+
+<div id="list_display_layer">
+    <el-dialog :title="title" :visible.sync="visible" :width="'50%'">
+        <el-checkbox-group v-model="selected_list_display">
+            {% verbatim %}
+            <el-checkbox v-for="(value, key) in list_display" :key="key" :label="key">
+                {{ value }}
+            </el-checkbox>
+            {% endverbatim %}
+        </el-checkbox-group>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="visible = false">{% trans 'Back' %}</el-button>
+            <el-button type="primary" @click="save_not_list_display">{% trans 'Save' %}</el-button>
+        </span>
+    </el-dialog>
+</div>
+
+{% block extra_actions_css %}
+
+    <style type="text/css">
+
+        #layer_app .el-dialog__header {
+            padding-bottom: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        #layer_app .el-dialog__footer {
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        #layer_app .el-form-item__label {
+            font-weight: bold;
+        }
+    </style>
+
+{% endblock %}
+
+{% block extra_actions_script %}
+
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/automatic/dicts.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/automatic/segment.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/js/axios.min.js' %}"></script>
+
+    <script type="text/javascript">
+
+        const layerApp = new Vue({
+            el: '#layer_app',
+            data: {
+                visible: false,
+                title: '弹出层',
+                params: [],
+                layer: {},
+                rules: [],
+                action: '',
+                loading: false
+            },
+            methods: {
+                select_remote_method(query, item) {
+                    console.log('select_remote_method')
+                    console.log(query)
+                    console.log(item)
+                    if (item.not_search) {
+                        return
+                    }
+
+                    let param = {
+                        'app_label': item.app_label,
+                        'model_name': item.model_name,
+                        'field_name': item.field_name
+                    }
+
+                    if (query.length > 0) {
+                        param['term'] = query
+                    }
+
+                    item.loading = true
+
+                    axios.get('/admin/autocomplete/', {params: param},).then(res => {
+                        console.log(res);
+                        if (res.status == 200) {
+                            console.log(res.data)
+                            let list = res.data.results
+                            let option_list = []
+                            for (let option of list) {
+                                option_list.push({
+                                    'key': option.id,
+                                    'label': option.text
+                                })
+                            }
+                            item.options = option_list
+                            console.log(option_list)
+                        }
+                        item.loading = false
+                    }).catch(err => {
+                        item.loading = false
+                    });
+                },
+                layerDownload(url, data) {
+                    axios.post(url, data, {responseType: "blob"}).then(res => {
+                        console.log(url, data);
+                        console.log(res); //把response打出来，看下图
+
+                        let filename = res.headers['filename']
+                        let content_type = res.headers['content-type']
+
+                        console.log(content_type)
+                        console.log(filename)
+
+                        let blob = new Blob([res.data]);
+
+                        // 3.创建一个临时的url指向blob对象
+                        let download_url = window.URL.createObjectURL(blob);
+                        console.log(download_url)
+
+                        // 4.创建url之后可以模拟对此文件对象的一系列操作，例如：预览、下载
+                        let elink = document.createElement("a");
+                        elink.style.display = 'none';
+                        elink.href = download_url;
+                        elink.download = filename;
+                        elink.click();
+                        // 5.释放这个临时的对象url
+                        window.URL.revokeObjectURL(download_url);
+                        this.$message({
+                            message: '导出成功',
+                            type: 'success'
+                        });
+                        this.loading = false
+                        this.visible = false;
+                    }).catch(err => {
+                        console.log(err)
+                        this.$message.error(err)
+                    });
+                },
+                layerSubmit() {
+                    const self = this;
+                    //校验
+                    for (let key in self.params) {
+                        let item = self.params[key];
+                        if (item.require) {
+                            if (!item.value || item.value == '' || item.length == 0) {
+                                self.$message.error(`"${item.label}" Can't be empty.`)
+                                return;
+                            }
+                        }
+                    }
+
+                    //开始提交
+                    let data = new FormData();
+                    //方法名
+                    data.append('_action', self.action);
+
+                    let selecteds = [];
+                    $("#result_list input[name='_selected_action']").each((index, item) => {
+                        console.log(item)
+                        if (item.checked) {
+                            selecteds.push(item.value)
+                        }
+                    });
+
+                    {#console.log('1')#}
+                    {#console.log(selecteds)#}
+                    {#console.log(data.entries['_selected'])#}
+                    data.append('_selected', selecteds.join(','));
+
+                    data.append('select_across', document.querySelector("input[name='select_across']").value)
+
+                    {#console.log('2')#}
+                    {#console.log(data.entries['_selected'])#}
+                    {#console.log(data)#}
+
+                    //获取选中的数据
+                    data.append('csrfmiddlewaretoken', document.querySelector('[name="csrfmiddlewaretoken"]').value);
+
+                    var first_passcode = ''
+                    var last_passcode = ''
+                    for (let key in self.params) {
+                        let item = self.params[key];
+                        console.log('key', item.key)
+                        console.log('value', item.value)
+                        // 如果是修改密码，做密码是否一致判断
+                        if (item.key === 'first_passcode') {
+                            first_passcode = item.value
+                        }
+                        if (item.key === 'last_passcode') {
+                            last_passcode = item.value
+                        }
+
+                        if (item.type === "file") {
+                            data.append(item.key, self.$refs[item.key][0].files[0]);
+                        } else if (item.value) {
+                            data.append(item.key, item.value);
+                        }
+                    }
+
+                    console.log('first_passcode', first_passcode, 'last_passcode', last_passcode)
+                    this.loading = true;
+
+                    if (first_passcode || last_passcode) {
+                        if (first_passcode !== last_passcode) {
+                            this.$message.error('两次密码不一致')
+                            return;
+                        }
+                    }
+
+                    if (self.action === 'lucky_export_admin_action'  || this.layer.is_download) {
+                        let url = '{% get_model_ajax_url %}' + window.location.search
+                        this.$message({
+                            message: '导出中，请等待...',
+                            type: 'success'
+                        });
+                        self.layerDownload(url, data)
+
+                    } else {
+                        axios.post('{% get_model_ajax_url %}' + window.location.search, data,).then(res => {
+
+                            if (res.data.status === 'redirect') {
+                                this.visible = false;
+                                window.location.href = res.data.url;
+                                return;
+                            }
+                            if (res.data.status === 'success') {
+                                this.visible = false;
+                                //1.5s 后刷新
+                                setTimeout(() => window.location.reload(), 1000);
+                            }
+                            this.$message({
+                                message: res.data.msg,
+                                type: res.data.status
+                            });
+
+                        }).catch(err => {
+                            this.$message.error(err)
+                        });
+                    }
+
+                }
+            }
+        })
+
+        const listDisplayLayerApp = new Vue({
+            el: '#list_display_layer',
+            data: {
+                visible: false,
+                title: '自定义表头',
+                selected_list_display: [],
+                list_display: {},
+            },
+            methods: {
+                get_list_display() {
+
+                },
+                get_model_not_list_display() {
+
+                },
+                save_not_list_display() {
+
+                },
+            },
+            created: function () {
+                this.get_list_display();
+            },
+        })
+
+        //弹出层处理
+        function layer(data, action) {
+            layerApp.layer = data.layer;
+            layerApp.title = data.layer.title;
+            layerApp.params = data.layer.params;
+            layerApp.action = action;
+
+            layerApp.$nextTick(() => {
+                layerApp.visible = true;
+            });
+        }
+
+        function listDisplayLayer() {
+            listDisplayLayerApp.$nextTick(() => {
+                listDisplayLayerApp.visible = true;
+            });
+        }
+
+        function actionsCleaning(name) {
+            $("#changelist-form input[name='action']").val(name);
+            $("#changelist-form [name='_save']").removeAttr('name');
+            $("#changelist-form [name!='']").each(function () {
+                var obj = $(this);
+                if (obj.attr('name') && obj.attr('name').indexOf('form-') == 0) {
+                    obj.removeAttr('name');
+                }
+            });
+        }
+
+        var _action = new Vue({
+            el: '.actions',
+            data: {
+                select_across: 0,
+                file_format: 1,
+                show: true,
+                list_type: 'list',
+                options: [
+                    {
+                        value: 0,
+                        label: 'csv'
+                    }, {
+                        value: 1,
+                        label: 'xls'
+                    }, {
+                        value: 2,
+                        label: 'xlsx'
+                    }, {
+                        value: 3,
+                        label: 'tsv'
+                    }, {
+                        value: 4,
+                        label: 'ods'
+                    }, {
+                        value: 5,
+                        label: 'json'
+                    }, {
+                        value: 6,
+                        label: 'yaml'
+                    }, {
+                        value: 7,
+                        label: 'html'
+                    }],
+                customButton:{% autoescape off %}{% custom_button %}{% endautoescape %},
+                exts: [],
+                cus_btn_opt: {}
+            },
+            created() {
+                if (localStorage && typeof (localStorage.searchStatus) != 'undefined') {
+                    this.show = localStorage.searchStatus == 'true';
+                }
+                if (localStorage && typeof (localStorage.list_type) != 'undefined') {
+                    this.show = localStorage.list_type;
+                }
+            },
+            watch: {
+                'list_type': function (n_v) {
+                    if (n_v === 'card') {
+                        // 隐藏列表
+                        document.getElementById('list-table').style.display = 'none';
+                        document.getElementById('list-card').style.display = 'inherit';
+                    } else {
+                        document.getElementById('list-table').style.display = 'inherit';
+                        document.getElementById('list-card').style.display = 'none';
+                    }
+
+                    if (localStorage) {
+                        localStorage['list_type'] = n_v;
+                    }
+                },
+                'show': function (newValue) {
+                    obj = document.querySelector('.xfull')
+                    if (!newValue) {
+                        //隐藏
+                        document.getElementById('toolbar').style.display = 'none';
+                        if (obj) {
+                            obj.style.display = 'none';
+                        }
+                    } else {
+                        //显示
+                        document.getElementById('toolbar').style.display = 'inherit';
+                        if (obj) {
+                            obj.style.display = 'inherit';
+                        }
+                    }
+                    if (localStorage) {
+                        localStorage['searchStatus'] = newValue;
+                    }
+                }
+            },
+            methods: {
+                {% block action_vue_methods %}
+                {% endblock %}
+                jump_add(add_url){
+                    if(parent.window.app){
+                        parent.window.app.tab_navigate_to(add_url, window)
+                    }else{
+                        window.location.href = add_url
+                    }
+                },
+                handle_win_fun(fun_name, args){
+                    window[fun_name](args)
+                },
+                switch_list_or_cell() {
+                    if (this.list_type === 'list') {
+                        this.list_type = 'card'
+                    } else {
+                        this.list_type = 'list'
+                    }
+                },
+                searchDisplay: function () {
+                    this.show = !this.show;
+                },
+                reload: function () {
+                    window.location.reload()
+                },
+                openNewPage: function () {
+                    window.open(window.location.href)
+                },
+                openListDisplay: function () {
+                    listDisplayLayer();
+                },
+                getIcon: getIcon,
+                extClick: function (item) {
+                    if (item.url.indexOf('/import/') !== -1) {
+                        // 导入
+                        window.location.href = item.url;
+                    }
+                    if (item.url.indexOf('/export/') !== -1) {
+                        let temp = _action.customButton['lucky_export_admin_action'];
+                        if (temp.layer) {
+                            layer(temp, 'lucky_export_admin_action');
+                        }
+                    }
+                },
+                formSubmit: function () {
+                    $("#changelist-form").submit();
+                },
+                delSelected: function (name) {
+                    actionsCleaning(name);
+                    var self = this;
+
+                    // 增加非空判断！
+                    if ($("#changelist-form").serializeArray().length <= 2) {
+                        this.$message.error(getLanuage("Please select at least one option!"));
+                        return;
+                    }
+                    //#67 #66 修复删除问题，改为弹出确认
+                    this.$confirm(getLanuage('Are you sure you want to delete the selected?'))
+                        .then(_ => {
+                            self.formSubmit();
+                        }).catch(_ => {
+                    });
+                }
+            }
+        });
+
+        function selectAll() {
+            _action.select_across = 1;
+        }
+
+        function unSelect() {
+            _action.select_across = 0;
+        }
+
+        function get_select_item_list() {
+            let selecteds = [];
+            $("#result_list input[name='_selected_action']").each((index, item) => {
+                if (item.checked) {
+                    selecteds.push(item.value)
+                }
+            });
+            if (selecteds.length == 0) {
+                layerApp.$message.error('请先选择对应操作项！')
+                return null;
+            }
+            return selecteds;
+        }
+
+        $(function () {
+            // 给列表的按钮增加点击事件
+            action_btns = $(".actions button").not('.stop-submit');
+
+            // 点击事件
+            action_btns.click(function () {
+                var url = $(this).attr("url");
+                var eid = $(this).attr('eid');
+                var confirm = $(this).attr('confirm');
+                var checkbox_checked = $(".action-checkbox input:checked").length;
+                var data_name = $(this).attr('data-name')
+
+                var on_all = false;
+                var show_in_item = false;
+
+                if (_action.customButton[data_name]) {
+                    on_all = _action.customButton[data_name].on_all
+                    show_in_item = _action.customButton[data_name].show_in_item
+
+                    if (show_in_item) {
+                        // 获取所有数据行的复选框
+                        var $checkboxes = $('input.action-select');
+                        // 根据全选复选框的状态设置数据行复选框的状态
+                        $checkboxes.prop('checked', false);
+                        $('#action-toggle').prop('checked', false);
+
+                        var model_id = $(this).attr('data-model-id')
+                        let jq_str = "#result_list .action-checkbox input[value=" + model_id + "]"
+                        let check_box = $(jq_str)
+                        check_box.prop('checked', true)
+                    }
+
+                }
+
+                var _vue = new Vue();
+
+                //这边处理弹出层对话框
+                if (eid) {
+                    for (var i in _action.customButton) {
+                        var temp = _action.customButton[i];
+                        if (temp.eid == eid && temp.layer) {
+                            // 增加必选判断
+                            let need_select = _action.customButton[data_name].need_select
+                            if(need_select && checkbox_checked === 0){
+                                _vue.$alert(getLanuage("Please select at least one option!"), '', {
+                                    type: 'warning'
+                                })
+                                return;
+                            }
+
+                            layer(temp, i);
+                            return;
+                        }
+                    }
+                }
+
+                // 判断是否需要选中列表数据才能调用
+                if (!show_in_item && !on_all && checkbox_checked == 0 && data_name != "add_item" && _action.customButton[data_name] && !_action.customButton[data_name].action_url) {
+                    _vue.$alert(getLanuage("Please select at least one option!"), '', {
+                        type: 'warning'
+                    })
+                } else if (confirm) {
+                    _vue.$confirm(confirm, '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => done.call(this));
+
+                } else {
+                    if (data_name) {
+                        done.call(this)
+                    }
+                }
+
+                function done() {
+
+                    if (eid) {
+                        for (var i in _action.customButton) {
+                            var temp = _action.customButton[i];
+                            if (temp.eid == eid) {
+                                if (typeof (temp.action_type) != 'undefined') {
+
+                                    if (!temp.action_url) {
+                                        this.$notify({
+                                            title: 'error',
+                                            message: 'action must contain attributes:action_url! ',
+                                            type: 'error',
+                                            dangerouslyUseHTMLString: true
+                                        });
+                                        return;
+                                    }
+
+                                    switch (temp.action_type) {
+                                        case 0:
+                                            window.location.href = temp.action_url;
+                                            break;
+                                        case 1:
+                                            parent.window.app.openTab({
+                                                url: temp.action_url,
+                                                icon: temp.icon || 'fa fa-file',
+                                                name: temp.short_description,
+                                                breadcrumbs: []
+                                            });
+                                            break;
+                                        case 2:
+                                            window.open(temp.action_url);
+                                            break;
+                                    }
+                                    return;
+                                }
+                                //终止执行
+                                break;
+                            }
+                        }
+                    }
+
+                    if (url) {
+                        window.location.href = url;
+                        return;
+                    }
+                    if ($(this).attr('data-name')) {
+                        var name = $(this).attr("data-name");
+                        actionsCleaning(name);
+                    }
+
+                    $("#changelist-form").submit();
+
+                    if (url_name) {
+                        if (is_detail) {
+                            url_name = url_name.replace('replace_model_id', $(this).attr('data-model-id'));
+                        }
+                        if (parent.window.app) {
+                            parent.window.app.tab_navigate_to(url_name, window);
+                        } else {
+                            window.location.href = url_name;
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+{% endblock %}
+
+

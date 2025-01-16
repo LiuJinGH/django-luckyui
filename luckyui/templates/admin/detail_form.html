@@ -1,0 +1,303 @@
+{% extends "admin/base_site.html" %}
+
+{% load i18n admin_urls static admin_modify simpletags luckytags %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media }}
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}"/>
+    {#  详情表单样式  #}
+    <link rel="stylesheet" type="text/css" href="{% static 'luckyui/css/lucky_detail_forms.css' %}"/>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/js/axios.min.js' %}"></script>
+
+    <script type="text/javascript">
+        let detail_inline_tab_name_list = ['change_info']
+        let custom_first_tab_name = null
+    </script>
+{% endblock %}
+
+{% block content %}
+
+    <div id="content-main" class="form-main">
+
+        <div class="lucky-page-header">
+            {% if '_popup' not in request.GET %}
+                <div class="page-header">
+                    <div class="back_btn" @click="goBack">
+                        <i class="el-icon-back"></i>
+                        <div class="title">
+                            <div>{% trans 'Back' %}</div>
+                            <div style="margin-left: 10px; margin-right: 10px">|</div>
+                            <div>{{ title }}</div>
+                        </div>
+                    </div>
+
+                    {% block submit_buttons %}{% detail_submit_row %}{% endblock %}
+                </div>
+            {% endif %}
+        </div>
+
+        {% block object-tools %}
+            {% if change %}{% if not is_popup %}
+                <div class="object-tools">
+                    {% block object-tools-items %}
+                        {% if has_absolute_url %}
+                            <el-button size="small" @click="window.open('{{ absolute_url }}')" class="viewsitelink"
+                                       icon="fas fa-globe-asia">{% trans "View on site" %}</el-button>
+                        {% endif %}
+                    {% endblock %}
+                </div>
+            {% endif %}{% endif %}
+        {% endblock %}
+
+        <div class="detail-body">
+            {#  详情视图 详情页去掉了编辑属性，这里的form可以改成div  #}
+            <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post"
+                  id="{{ opts.model_name }}_form" class="lucky_detail_form" novalidate>
+
+                {% csrf_token %}
+                {% block form_top %}
+                {% endblock %}
+
+                {# 即将移除 详情页没有编辑模块 #}
+
+                {% if errors %}
+                    <div id="alert">
+                        <el-alert
+                                title="{% if errors|length == 1 %}
+                                {% trans 'Please correct the error below.' %}
+                    {% else %}
+                    {% trans 'Please correct the errors below.' %}
+                    {% endif %}"
+                                type="error">
+                        </el-alert>
+                    </div>
+                    {{ adminform.form.non_field_errors }}
+                {% endif %}
+
+                {# 基本信息 字段视图  #}
+                {% block field_sets %}
+                    <div id="detail_basic_info">
+                        {% for fieldset in adminform %}
+                            {% include "admin/includes/fieldset.html" %}
+                        {% endfor %}
+                    </div>
+                {% endblock %}
+
+                {% block after_field_sets %}{% endblock %}
+
+                {% block after_related_objects %}{% endblock %}
+
+                {% block admin_change_form_document_ready %}
+                    <script type="text/javascript"
+                            id="django-admin-form-add-constants"
+                            src="{% static 'admin/js/change_form.js' %}"
+                            {% if adminform and add %}
+                            data-model-name="{{ opts.model_name }}"
+                            {% endif %}>
+                    </script>
+                {% endblock %}
+
+                {# JavaScript for prepopulated fields #}
+                {% prepopulated_fields_js %}
+
+            </form>
+
+            {#  inline视图  #}
+            <div class="inline-tabs" >
+                {# 标签栏 #}
+                <div id="detail_form_tabs">
+
+                    <el-tabs v-model="tab_pane_name" @tab-click="handle_click">
+
+                        {# <el-tab-pane label="详情信息" name="basic_info"></el-tab-pane>#}
+
+                        {% block custom_before_inline_tab %}{% endblock %}
+
+                        {% for inline_admin_formset in inline_admin_formsets %}
+                            <el-tab-pane label="{{ inline_admin_formset.opts.verbose_name|capfirst }}"
+                                         name="{{ inline_admin_formset.opts.opts.app_label }}_{{ inline_admin_formset.opts.opts.model_name }}">
+                            </el-tab-pane>
+                        {% endfor %}
+
+                        {% block custom_inline_tab %}{% endblock %}
+
+                        {% block custom_tab_pane_title %}
+                            <el-tab-pane label="活动记录" name="change_info"></el-tab-pane>
+                        {% endblock %}
+
+                    </el-tabs>
+                </div>
+
+                {#  inline视图 之前的块  #}
+                {% block before_custom_inline %}{% endblock %}
+
+                {# inline视图 #}
+                {% block inline_field_sets %}
+                    {% for inline_admin_formset in inline_admin_formsets %}
+                        <div id="detail_{{ inline_admin_formset.opts.opts.app_label }}_{{ inline_admin_formset.opts.opts.model_name }}"
+                             style="display: none;  ">
+                            {% if inline_admin_formset.opts.detail_template %}
+                                {% include inline_admin_formset.opts.detail_template %}
+                            {% else %}
+                                {% include inline_admin_formset.opts.template %}
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% endblock %}
+
+                {#  自定义 inline 视图   #}
+                {% block custom_inline %}{% endblock %}
+
+                {% block custom_tab_pane_body %}
+                    {#  修改历史视图  #}
+                    <div id="detail_change_info" style=" display: none">
+                        {% url opts|admin_urlname:'history' original.pk|admin_urlquote as history_url %}
+                        <iframe frameborder="0" src="{% add_preserved_filters history_url %}"></iframe>
+                    </div>
+                {% endblock %}
+
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+
+        {#  标题栏  #}
+        new Vue({
+            el: '.lucky-page-header',
+            methods: {
+                goBack: function () {
+                    if(parent.window.app){
+                        parent.window.app.tab_navigate_back(window)
+                    }else{
+                        window.history.go(-1)
+                    }
+                    {#window.history.go(-1)#}
+                },
+            }
+        })
+
+        {#  inline视图  #}
+        let detail_form_tabs = new Vue({
+            el: '#detail_form_tabs',
+            data: {
+                inline_tab_name_list: [],
+                tab_pane_name: null,
+                last_tab_pane_name: '',
+                before_custom: '{{ before_custom }}',
+                custom_tab_name:'{{ tab_name }}'
+            },
+
+            created() {
+                if (this.before_custom) {
+                    this.inline_tab_name_list.push(this.custom_tab_name)
+                }
+
+                {% for inline_admin_formset in inline_admin_formsets %}
+                    this.inline_tab_name_list.push("{{ inline_admin_formset.opts.opts.app_label }}_{{ inline_admin_formset.opts.opts.model_name }}")
+                {% endfor %}
+
+                if (custom_first_tab_name){
+                    this.tab_pane_name = custom_first_tab_name
+                    this.last_tab_pane_name = custom_first_tab_name
+                }else if (this.inline_tab_name_list.length > 0) {
+                    this.tab_pane_name = this.inline_tab_name_list[0]
+                    this.last_tab_pane_name = this.inline_tab_name_list[0]
+                } else {
+                    let first_tab_pane_name = detail_inline_tab_name_list[0]
+                    this.tab_pane_name = first_tab_pane_name
+                    this.last_tab_pane_name = first_tab_pane_name
+                }
+                this.inline_tab_name_list = this.inline_tab_name_list.concat(detail_inline_tab_name_list)
+            },
+            mounted() {
+                if (this.inline_tab_name_list.length > 0) {
+                    let el = document.getElementById('detail_' + this.tab_pane_name)
+                    if(el){
+                        el.style.display = "" // 显示
+                    }
+                }
+            },
+            methods: {
+                handle_click() {
+                    if (this.tab_pane_name === this.last_tab_pane_name) return
+
+                    if (this.last_tab_pane_name) {
+                        let id_last_tab_pane_name = 'detail_' + this.last_tab_pane_name
+                        document.getElementById(id_last_tab_pane_name).style.display = "none" // 隐藏
+                        console.log(id_last_tab_pane_name)
+                    }
+
+                    let id_tab_pane_name = 'detail_' + this.tab_pane_name
+                    document.getElementById(id_tab_pane_name).style.display = "" // 显示
+                    console.log(id_tab_pane_name)
+                    this.last_tab_pane_name = this.tab_pane_name
+                }
+            }
+        })
+
+        new Vue({
+            el: '#{{ opts.model_name }}_form_content',
+        })
+
+        if ($(".object-tools").length != 0) {
+            new Vue({
+                el: '.object-tools',
+                data: {
+                    dialogTableVisible: false,
+                    url: ''
+                },
+                methods: {
+                    go_url: function (url) {
+                        this.url = url;
+                        this.dialogTableVisible = true;
+                    }
+                }
+            })
+        }
+
+        if (document.getElementById('alert')) {
+            new Vue({
+                el: '#alert'
+            })
+        }
+
+        function del(url) {
+            window.location.href = url;
+        }
+
+        function detail(url) {
+            window.location.href = url;
+        }
+
+        // 拦截只读的a标签跳转，改写成tab_navigate_to跳转。
+        document.addEventListener('DOMContentLoaded', function (){
+            let links = document.querySelectorAll('a.readonly_admin_url_a');
+            // 为每个 a 标签添加点击事件监听器
+            links.forEach(function(link) {
+                link.addEventListener('click', function(event) {
+                    // 阻止默认行为
+                    event.preventDefault();
+                    // 触发自定义函数
+                    if(parent.window.app){
+                        parent.window.app.tab_navigate_to(link.href, window)
+                    }else{
+                        window.location.href = link.href
+                    }
+                });
+            });
+        })
+    </script>
+
+    {% block extra_script %}
+        {{ block.super }}
+    {% endblock %}
+
+{% endblock %}

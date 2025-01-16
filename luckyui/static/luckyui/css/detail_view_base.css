@@ -1,0 +1,12 @@
+.detail-content {
+  margin: 0 20px;
+  padding: 20px;
+  border-radius: 20px;
+  background-color: #fff;
+}
+.form-readonly-img {
+  width: 150px;
+  height: 150px;
+  fill: context-fill;
+}
+/*# sourceMappingURL=detail_view_base.css.map */

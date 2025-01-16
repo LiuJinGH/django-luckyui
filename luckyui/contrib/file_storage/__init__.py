@@ -1,0 +1,3 @@
+
+from .storage import LuckyStorage
+

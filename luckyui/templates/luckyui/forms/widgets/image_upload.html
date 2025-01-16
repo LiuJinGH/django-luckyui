@@ -1,0 +1,136 @@
+{% load i18n %}
+{% load admin_urls static admin_list simpletags %}
+
+<style type="text/css">
+    .el-upload-dragger {
+        width: auto !important;
+    }
+
+    .avatar-uploader .el-upload {
+        border: 1px dashed #d9d9d9;
+        border-radius: 6px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .avatar-uploader .el-upload:hover {
+        border-color: #409EFF;
+    }
+
+    .avatar-uploader-icon {
+        font-size: 28px;
+        color: #8c939d;
+        width: 178px;
+        height: 178px;
+        line-height: 160px;
+        text-align: center;
+    }
+
+    .upload-img-div {
+        position: relative;
+        width: 178px;
+        height: 178px;
+    }
+
+    .upload-img-mask {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        opacity: 0;
+        background-color: rgba(0, 0, 0, .5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .avatar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .upload-img-mask:hover {
+        opacity: 1
+    }
+
+    .upload-img-item {
+        font-size: 20px;
+        color: #fff;
+    }
+
+</style>
+
+<div class="lucky-image-upload-{{ widget.name }}">
+
+    <el-upload name="{{ widget.name }}"
+               class="avatar-uploader"
+               action=""
+               drag
+               :show-file-list="false"
+               :auto-upload="false"
+               :on-change="change_file"
+               accept="{{ widget.attrs.accept }}">
+        <div v-if="image_url" class="upload-img-div">
+            <el-image class="avatar"
+                      :src="image_url"
+                      fit="contain"></el-image>
+            <div class="upload-img-mask">
+                <span class="upload-img-item" @click="handleRemove(file)">
+                    <i class="el-icon-zoom-in"></i>
+                </span>
+                {% if not widget.required %}
+
+                    <span style="margin-left: 15px;" class="upload-img-item" @click.stop="handle_remove">
+                        <i class="el-icon-delete"></i>
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+
+        {% if not widget.required %}
+            <input style="display: none;"
+                    type="checkbox"
+                    name="{{ widget.checkbox_name }}"
+                    id="{{ widget.checkbox_id }}"
+                    {% if widget.attrs.disabled %} disabled{% endif %} >
+        {% endif %}
+    </el-upload>
+
+
+</div>
+
+
+<script type="text/javascript">
+
+    new Vue({
+        el: '.lucky-image-upload-{{ widget.name }}',
+        data: {
+            image_url: null,
+            field_id: ''
+        },
+        mounted() {
+            this.field_id = 'id_' + "{{ widget.name }}"
+            this.image_url = "{{ widget.value.url }}"
+            $('input[name="{{ widget.name }}"]').attr("id", this.field_id)
+        },
+        methods: {
+            handle_remove() {
+                this.image_url = null
+                $('#{{ widget.name }}-clear_id').attr("checked", true)
+            },
+            change_file(file, fileList) {
+                this.image_url = URL.createObjectURL(file.raw)
+                $('#{{ widget.name }}-clear_id').attr("checked", false)
+            },
+        }
+    })
+
+</script>

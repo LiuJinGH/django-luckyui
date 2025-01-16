@@ -1,0 +1,196 @@
+{% load i18n admin_urls static admin_modify simpletags %}
+
+<style type="text/css">
+    .inline-group .tabular tr.has_original td {
+        padding-top: inherit !important;
+    }
+
+    .tabular .form-row {
+        border-bottom: 1px dashed #ebeef5 !important;
+    }
+
+    .module {
+        padding: 10px 0 !important;
+    }
+</style>
+
+<div class="js-inline-admin-formset inline-group" id="{{ inline_admin_formset.formset.prefix }}-group"
+     data-inline-type="tabular"
+     data-inline-formset="{{ inline_admin_formset.inline_formset_data }}">
+    <div class="tabular inline-related {% if forloop.last %}last-related{% endif %}">
+        {{ inline_admin_formset.formset.management_form }}
+        <fieldset class="module {{ inline_admin_formset.classes }}">
+            {{ inline_admin_formset.formset.non_form_errors }}
+            <table>
+                <thead>
+                {# 表单 头部 #}
+                <tr>
+                    <th class="original" style="display: none;"></th>
+                    {# InlineAdminFormSet 的函数方法 #}
+                    {% for field in inline_admin_formset.fields %}
+                        <th class="column-{{ field.name }}{% if field.required %} required{% endif %}{% if field.widget.is_hidden %} hidden{% endif %}">
+                            {{ field.label|capfirst }}
+                            {# 帮助提示 #}
+                            {% if field.help_text %}
+                                <img src="{% static "admin/img/icon-unknown.svg" %}" class="help help-tooltip"
+                                     width="10" height="10" alt="({{ field.help_text|striptags }})"
+                                     title="{{ field.help_text|striptags }}">
+                            {% endif %}
+                        </th>
+                    {% endfor %}
+
+                    <th>操作</th>
+
+                    {% if inline_admin_formset.formset.can_delete and inline_admin_formset.has_delete_permission %}
+                        <th>{% translate "Delete?" %}</th>
+                    {% endif %}
+                </tr>
+                </thead>
+
+                <tbody>
+                {% for inline_admin_form in inline_admin_formset %}
+                    {# 报错 #}
+                    {% if inline_admin_form.form.non_field_errors %}
+                        <tr class="row-form-errors">
+                            <td colspan="{{ inline_admin_form|cell_count }}">
+                                {{ inline_admin_form.form.non_field_errors }}
+                            </td>
+                        </tr>
+                    {% endif %}
+
+                    <tr class="form-row {% if inline_admin_form.original or inline_admin_form.show_url %}has_original{% endif %}{% if forloop.last and inline_admin_formset.has_add_permission %} empty-form{% endif %}"
+                        id="{{ inline_admin_formset.formset.prefix }}-{% if forloop.last and inline_admin_formset.has_add_permission %}empty{% else %}{{ forloop.counter0 }}{% endif %}">
+
+                        {% for fieldset in inline_admin_form %}
+                            {% for line in fieldset %}
+                                {% for field in line %}
+                                    <td class="{% if field.field.name %}field-{{ field.field.name }}{% endif %}{% if field.field.is_hidden %} hidden{% endif %}">
+                                        {% if field.is_readonly %}
+                                            <p style="word-break: break-all; word-wrap: anywhere;">{{ field.contents }}</p>
+                                        {% else %}
+                                            {{ field.field.errors.as_ul }}
+                                            {{ field.field }}
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+
+                        <td>
+                            {# 操作按钮栏 #}
+                            {% if inline_admin_form.original %}
+                                {% if inline_admin_form.model_admin.show_change_link and inline_admin_form.model_admin.has_registered_model %}
+                                    {% block custom_inline_action %}
+                                        <div style="display: flex; flex-shrink: 0;">
+                                            {# inline 查看按钮 需要有查看权限 #}
+                                            {% if inline_admin_formset.has_view_permission %}
+                                                <button class="el-button el-button--text"
+                                                        onclick="jump_detail('{% url inline_admin_form.model_admin.opts|admin_urlname:'detail' inline_admin_form.original.pk|admin_urlquote %}')">
+                                                    {% translate "View" %}
+                                                </button>
+                                            {% endif %}
+                                            {# inline 修改按钮 需要有修改权限 #}
+                                            {% if inline_admin_formset.has_change_permission %}
+                                                <button class="el-button el-button--text"
+                                                        onclick="jump_change('{{ inline_admin_form.model_admin.opts.verbose_name_plural }}', '{{ inline_admin_form.model_admin.opts.model_name }}', '{% url inline_admin_form.model_admin.opts|admin_urlname:'change' inline_admin_form.original.pk|admin_urlquote %}')">
+                                                    {% translate "Change" %}
+                                                </button>
+                                            {% endif %}
+                                            {# inline 删除按钮 需要有删除权限 #}
+                                            {% if inline_admin_formset.has_delete_permission %}
+                                                <a class="related-widget-wrapper-link add-related"
+                                                   id="delete_{{ inline_admin_formset.opts.opts.model_name }}"
+                                                   data-popup="yes"
+                                                   href="{% url inline_admin_form.model_admin.opts|admin_urlname:'delete' inline_admin_form.original.pk|admin_urlquote %}?_to_field=id&_popup=1"
+                                                   title="{% blocktranslate %}Delete {{ inline_admin_formset.model }}{% endblocktranslate %}">
+                                                    <button class="el-button el-button--text" style="margin-left: 10px">
+                                                        {% translate 'Delete' %}
+                                                    </button>
+                                                </a>
+                                                <input id="{{ inline_admin_formset.opts.opts.model_name }}"
+                                                       style="display: none"/>
+                                            {% endif %}
+                                            <div>{{ opts.change_related_template_url }}</div>
+                                        </div>
+                                    {% endblock %}
+                                {% endif %}
+                            {% endif %}
+
+                            {% if inline_admin_form.needs_explicit_pk_field %}
+                                {{ inline_admin_form.pk_field.field }}
+                            {% endif %}
+
+                            {% if inline_admin_form.fk_field %}
+                                {{ inline_admin_form.fk_field.field }}
+                            {% endif %}
+                        </td>
+
+                        {% if inline_admin_formset.formset.can_delete and inline_admin_formset.has_delete_permission %}
+                            <td class="delete">{% if inline_admin_form.original %}
+                                {{ inline_admin_form.deletion_field.field }}{% endif %}</td>
+                        {% endif %}
+                    </tr>
+
+
+                {% endfor %}
+
+                </tbody>
+            </table>
+        </fieldset>
+
+        {# 自定义按钮 #}
+        {% block custom_button %}
+
+            {% if inline_admin_formset.has_add_permission and inline_admin_formset.opts.has_registered_model %}
+                {# 添加inline实例 按钮 需要有添加权限 #}
+                <a class="related-widget-wrapper-link add-related"
+                   id="add_id_{{ inline_admin_formset.opts.opts.model_name }}"
+                   data-popup="yes"
+                   href="{% url inline_admin_formset.opts.opts|admin_urlname:'add' %}?_to_field=id&_popup=1&{{ opts.model_name }}={{ original.id }}"
+                   title="{% blocktranslate %}Add another {{ inline_admin_formset.model }}{% endblocktranslate %}">
+                    <button class="el-button el-button--primary el-button--small">
+                        <i class="el-icon-plus"></i>
+                        {% translate 'Add' %}
+                    </button>
+                </a>
+
+                <input id="id_{{ inline_admin_formset.opts.opts.model_name }}" style="display: none"/>
+            {% endif %}
+
+        {% endblock %}
+
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function jump_detail(detail_url) {
+        if (parent.window.app) {
+            parent.window.app.tab_navigate_to(detail_url, window)
+        } else {
+            window.location.href = detail_url
+        }
+    }
+
+    function jump_change(title, model, change_url) {
+        if (parent.window.app) {
+            parent.window.app.tab_navigate_to(change_url, window)
+        } else {
+            window.location.href = change_url
+        }
+    }
+
+    function refresh_tabular() {
+        window.location.reload();
+    }
+
+    function open_tab(name, icon, url, eid) {
+        self.parent.app.openTab({
+            name: name,
+            icon: 'menu-icon ' + icon,
+            url: url,
+            eid: 'tab-' + name + eid
+        })
+    }
+
+</script>

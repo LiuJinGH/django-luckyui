@@ -1,0 +1,59 @@
+
+.form-row div {
+  display: flex;
+}
+
+.el-date-table td.today {
+  &.current {
+    span {
+      color: #fff !important;
+    }
+  }
+}
+
+form .aligned {
+
+  .form-row {
+    display: flex;
+    align-items: flex-start;
+
+    .fieldBox {
+      flex-grow: 1;
+    }
+  }
+
+  .vCheckboxLabel {
+    font-weight: bold;
+    color: var(--body-fg);
+    padding: 4px 10px 0 0;
+    min-width: 160px;
+  }
+
+  .vCheckboxLabel:after {
+    content: ':';
+    color: var(--body-fg);
+  }
+
+  label.required:before {
+    content: '* ';
+    color: red;
+  }
+
+  label {
+    min-width: 160px;
+    text-align: right;
+  }
+
+  .fieldBox-content {
+    display: flex;
+    flex-direction: column;
+
+    div.help {
+      margin-left: 0;
+      padding-left: 0;
+    }
+
+  }
+}
+
+

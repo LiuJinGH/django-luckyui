@@ -1,0 +1,93 @@
+{% load i18n admin_urls simpletags %}
+
+{% block submit_line_buttons %}
+<div class="submit-row" style="display: flex; align-items: center; justify-content: space-between;">
+
+    <div style="display: flex; align-items: center;">
+        {% block show_save_as_new_btn %}
+            {% if show_save_as_new %}
+                <el-button size="small" type="primary"
+                           onclick="form_submit('_saveasnew','Save as new')">{% trans 'Save as new' %}</el-button>
+            {% endif %}
+        {% endblock %}
+
+        {% block show_delete_link_btn %}
+            {% if show_delete_link %}
+                {% url opts|admin_urlname:'delete' original.pk|admin_urlquote as delete_url %}
+                <el-button size="small" icon="el-icon-delete" type="danger"
+                           onclick="del('{% add_preserved_filters delete_url %}')"
+                           style="float: left">{% trans "Delete" %}</el-button>
+            {% endif %}
+        {% endblock %}
+
+        {% block show_save_and_add_another_btn %}
+            {% if show_save_and_add_another %}
+                <el-button onclick="form_submit('_addanother','Save and add another')" size="small" type="primary">
+                    {% trans 'Save and add another' %}
+                </el-button>
+            {% endif %}
+        {% endblock %}
+
+         {% block show_save_and_continue_btn %}
+            {% if show_save_and_continue %}
+                <el-button onclick="form_submit('_continue','Save and continue editing')"  size="small" type="primary">
+                    {% trans 'Save and continue editing' %}
+                </el-button>
+            {% endif %}
+        {% endblock %}
+
+        {% block show_save_btn %}
+             {% if show_save %}
+                <el-button onclick="form_submit('_save')"  size="small" type="primary">
+                    {% trans 'Save' %}
+                </el-button>
+            {% endif %}
+        {% endblock %}
+
+        <input type="hidden" name="actionName" value="actionValue" id="actionName">
+    </div>
+
+</div>
+{% endblock %}
+
+{% block submit_line_js %}
+<script type="text/javascript">
+    var submitrows = document.getElementsByClassName('submit-row');
+    console.log('---- submitrows ----')
+    console.log(submitrows)
+
+    function del(url) {
+        window.location.href = url;
+    }
+
+    function prev() {
+        if(parent.window.app){
+            parent.window.app.tab_navigate_back(window)
+        }else{
+            window.history.go(-1)
+        }
+    }
+
+    function form_submit(name,v, e){
+        $("#button_type").attr('name', name).val(v);
+        let form = document.getElementById("{{ opts.model_name }}_form");
+        console.log("123")
+        let tmp_res = form.requestSubmit();
+        console.log(tmp_res)
+    }
+
+    for (let i = 0; i < submitrows.length; i++) {
+        new Vue({
+            el: submitrows[i],
+            data: {},
+            methods: {
+                formSubmit: function (name, v, e) {
+                    $("#actionName").attr('name', name).val(v);
+                    $("form").submit();
+                }
+            }
+        })
+    }
+
+</script>
+{% endblock %}

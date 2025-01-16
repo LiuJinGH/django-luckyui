@@ -1,0 +1,60 @@
+{% load admin_list %}
+{% load i18n %}
+{% load simpletags %}
+
+<div id="pagination">
+    {% django_version_is_gte_32x as is_32x %}
+    {% if pagination_required %}
+        <!--    改成分页始终显示    -->
+    {% endif %}
+
+    <el-pagination
+            background
+            @current-change="handleCurrentChange"
+            @size-change="handleSizeChange"
+            {% if is_32x %}
+            :current-page="{{ cl.page_num }}"
+            {% else %}
+            :current-page="{{ cl.page_num }}+1"
+            {% endif %}
+            :page-sizes="{{ cl.list_sizes_page }}"
+            :page-size="{{ cl.list_per_page }}"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="{{ cl.result_count|to_str }}">
+    </el-pagination>
+</div>
+<script type="text/javascript">
+    $(function () {
+        new Vue({
+            el: "#pagination",
+            data: {},
+            methods: {
+                handleSizeChange: function (size) {
+                    size_go(size)
+                },
+                handleCurrentChange: function (page) {
+                    {% if is_32x %}
+                        page_go(page);
+                    {% else %}
+                        page_go(page - 1);
+                    {% endif %}
+                }
+            }
+        })
+        function size_go(s) {
+            console.log('s:', s)
+            $("#changelist-search input[name='s']").val(s);
+            {% if is_32x %}
+                $("#changelist-search input[name='p']").val(1);
+            {% else %}
+                $("#changelist-search input[name='p']").val(0);
+            {% endif %}
+            $("#changelist-search").submit();
+        }
+        function page_go(p) {
+            $("#changelist-search input[name='p']").val(p);
+            $("#changelist-search").submit();
+        }
+
+    })
+</script>

@@ -1,0 +1,50 @@
+{#  鼠标悬停，图片放大显示  #}
+<div>
+    <img id="img" src=" ">
+</div>
+<style type="text/css">
+    #img {
+        display: none;
+        position: Absolute;
+        width: 400px;
+        height: 400px;
+        background: url(" ");
+        background-size: 400px 400px;
+        z-index: 1;
+        margin-left: 5%;
+        margin-top: -5%;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function (event) {
+        // 获取所有包含图片的单元格
+        var imageCells = document.querySelectorAll('.field-img_avatar');
+
+        // 监听鼠标悬浮事件
+        imageCells.forEach(function (cell) {
+            var image = cell.querySelector('img');
+            cell.addEventListener('mouseover', function (event) {
+                // 显示图片
+                var url = image.getAttribute('src');
+                let x = event.clientX;
+                let y = event.clientY;
+                console.log(event);
+                var img1 = document.getElementById("img");
+                img1.src = url
+                img1.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+                img1.style.display = 'block';
+
+            });
+
+            cell.addEventListener('mouseout', function () {
+                // 隐藏图片
+                var url = image.getAttribute('src');
+                var img1 = document.getElementById("img");
+                img1.src = url
+                img1.style.display = 'none';
+
+            });
+        });
+    });
+</script>
+

@@ -1,0 +1,40 @@
+.form-row div {
+  display: flex;
+}
+.el-date-table td.today.current span {
+  color: #fff !important;
+}
+form .aligned .form-row {
+  display: flex;
+  align-items: flex-start;
+}
+form .aligned .form-row .fieldBox {
+  flex-grow: 1;
+}
+form .aligned .vCheckboxLabel {
+  font-weight: bold;
+  color: var(--body-fg);
+  padding: 4px 10px 0 0;
+  min-width: 160px;
+}
+form .aligned .vCheckboxLabel:after {
+  content: ':';
+  color: var(--body-fg);
+}
+form .aligned label.required:before {
+  content: '* ';
+  color: red;
+}
+form .aligned label {
+  min-width: 160px;
+  text-align: right;
+}
+form .aligned .fieldBox-content {
+  display: flex;
+  flex-direction: column;
+}
+form .aligned .fieldBox-content div.help {
+  margin-left: 0;
+  padding-left: 0;
+}
+/*# sourceMappingURL=change_form_base.css.map */

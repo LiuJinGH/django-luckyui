@@ -1,0 +1,40 @@
+{% load i18n %}
+{% load admin_urls static admin_list simpletags %}
+
+<div style="display: inline !important;">
+    {% include "luckyui/forms/widgets/none_textarea.html" %}
+
+    <div class="lucky-textarea-{{ widget.name }}">
+        <el-input rows="10"
+                  :maxlength="{{ widget.attrs.maxlength }}"
+                  type="textarea"
+                  :autosize="{ minRows: 8, maxRows: 30}"
+                  placeholder="请输入内容"
+                  show-word-limit
+                  v-model="input_value" @input="text_input">
+        </el-input>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    new Vue({
+        el: '.lucky-textarea-{{ widget.name }}',
+        data: {
+            input_value: false,
+            field_id: ''
+        },
+        mounted() {
+            this.field_id = 'id_' + "{{ widget.name }}"
+            this.input_value = document.getElementById(this.field_id).value
+        },
+        methods: {
+            text_input(e) {
+                console.log('input_value:', this.input_value)
+                console.log('e:', e)
+                document.getElementById(this.field_id).value = e
+                console.log('input_value:', document.getElementById(this.field_id).value)
+            }
+        }
+    })
+</script>

@@ -1,0 +1,139 @@
+.inline-group .tabular td.original p {
+  margin-top: -50px;
+  height: 1.2em;
+}
+.page-header {
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  display: flex;
+  justify-content: space-between;
+}
+.lucky-page-header {
+  padding: 0px 20px 10px 20px;
+  background-color: white;
+  margin: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+.lucky-page-header .back_btn {
+  display: flex;
+  align-items: center;
+}
+.lucky-page-header .back_btn .title {
+  display: flex;
+  font-size: 14px;
+  font-weight: 500;
+}
+.lucky-page-header .back_btn .el-icon-back {
+  font-size: 18px;
+  margin-right: 6px;
+}
+#content {
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+.el-tabs__header {
+  margin: 0;
+}
+.aligned label {
+  padding: 0 10px 0 0;
+  margin-right: 10px;
+  width: 160px;
+  text-align: right;
+}
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20px 10px;
+}
+.form-row .fieldBox {
+  display: flex;
+  min-width: 30%;
+  flex-shrink: 0;
+}
+.form-row .fieldBox textarea {
+  width: 260px !important;
+}
+.form-row .fieldBox .fieldBox-content {
+  display: flex;
+  flex-direction: column;
+}
+.submit-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.el-dialog {
+  border-radius: 20px;
+}
+.article-head {
+  margin-top: -40px;
+}
+.article-length {
+  margin: 20px 0;
+}
+.article-require {
+  display: flex;
+}
+.dialog-row-title {
+  font-weight: bold;
+  font-size: 14px !important;
+  width: 100px;
+}
+.article-item {
+  margin-left: 25px;
+}
+.article-button {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 20px 20px 0 0;
+}
+.django-ckeditor-widget {
+  width: 100%;
+  display: flex !important;
+}
+.django-ckeditor-widget .preview-view {
+  margin-left: 20px;
+  display: flex;
+  flex-direction: column;
+}
+.django-ckeditor-widget .preview-view .preview-title {
+  margin-bottom: 15px;
+  flex-shrink: 0;
+}
+.django-ckeditor-widget .preview-view .preview-html {
+  flex-grow: 1;
+  border: 1px solid #d1d1d1;
+  overflow-y: scroll;
+}
+.aligned .vCheckboxLabel {
+  width: 160px;
+  padding: 0 10px 0 0;
+}
+.help {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+.required label,
+label.required {
+  font-weight: normal;
+  color: var(--body-quiet-color);
+}
+.form-readonly-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+label.required:before {
+  content: '* ';
+  color: red;
+}
+.select2-container--admin-autocomplete {
+  max-width: 250px !important;
+}
+/*# sourceMappingURL=lucky_change_form.css.map */

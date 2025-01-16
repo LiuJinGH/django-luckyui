@@ -1,0 +1,34 @@
+{% load static %}
+<div class="django-ckeditor-widget" data-field-id="{{ widget.attrs.id }}" >
+    <textarea name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %} data-processed="0" data-config="{{ widget.config }}" data-external-plugin-resources="{{ widget.external_plugin_resources }}" data-id="{{ widget.attrs.id }}" data-type="ckeditortype">{% if widget.value %}{{ widget.value }}{% endif %}</textarea>
+
+    <div class="preview-view preview-view-{{ widget.name }}" :style="{'height': ck_height+'px', 'width': ck_width+'px'}">
+        <span class="preview-title">移动端预览：</span>
+        <div class="preview-html" v-html="widget_value"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    new Vue({
+        el: '.preview-view-{{ widget.name }}',
+        data: {
+            ck_height: 812,
+            ck_width: 375,
+            widget_value: ''
+        },
+        mounted() {
+            // 监听chang事件
+            setTimeout(()=> {
+
+                let widget_id = 'id_' + "{{ widget.name }}"
+                let widget_instance = CKEDITOR.instances[widget_id]
+                // 初始化值
+                this.widget_value = widget_instance.getData()
+                widget_instance.on('change', ()=>{
+                    this.widget_value = widget_instance.getData()
+                })
+            }, 1000)
+
+        },
+    })
+</script>

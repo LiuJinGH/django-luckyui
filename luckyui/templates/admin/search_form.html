@@ -1,0 +1,497 @@
+{% load i18n static %}
+{% load simpletags luckytags %}
+
+{% if cl.search_fields or cl.has_filters %}
+    <script type="text/javascript">
+        function preSubmit() {
+            $('#changelist-search').find("input[name!='']").each(function () {
+                if ($(this).val() == '') {
+                    $(this).removeAttr('name');
+                }
+            });
+        }
+    </script>
+
+    {% autoescape off %}
+        {% load_dates %}
+    {% endautoescape %}
+
+    <style>
+        .select-date {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+
+            .date {
+                margin-right: 10px;
+            }
+
+            .quick-select {
+                display: flex;
+                margin-left: 20px;
+
+                .cell {
+                    color: #3370FF;
+                    font-size: 14px;
+                    padding: 5px 10px;
+                }
+
+                .cell + .cell {
+                    margin-left: 10px;
+                }
+
+                .active {
+                    background: #E6EDFF;
+                    border-radius: 5px;
+                }
+            }
+        }
+
+    </style>
+
+    <!-- search_form.html -->
+    <div id="toolbar">
+        <form id="changelist-search" method="get" onsubmit="preSubmit(this)">
+            <!-- 第几页 -->
+            <input type="hidden" name="p" value="{{ cl.page_num }}"/>
+            <!-- 页大小 -->
+            <input type="hidden" name="s" value="{{ cl.list_per_page }}"/>
+
+            <div class="simpleui-form" style="display: flex;flex-wrap: wrap; align-items: baseline">
+                <!-- DIV needed for valid HTML -->
+
+                {% if cl.search_fields %}
+                    <!-- 搜索框 -->
+                    <div class="date" style="width: 100px; text-align: left;">搜索：</div>
+                    <el-input size="small" class="simpleui-form-item"
+                              clearable
+                              name="{{ search_var }}"
+                              :placeholder="placeholder"
+                              prefix-icon="el-icon-search"
+                              v-model="searchInput" @keyup.enter.native="formSubmit()">
+                    </el-input>
+                {% endif %}
+
+                {% if cl.has_filters %}
+
+                    {% for spec in cl.filter_specs %}
+                        <div class="date" style="min-width: 100px; text-align: left;">{{ spec.title }}：</div>
+
+                        {% if spec|get_lucky_filter == 'search' %}
+                            <!-- 自定义搜索 -->
+                            <input type="hidden" v-model="{{ spec.parameter_name }}" name="{{ spec.parameter_name }}"/>
+
+                            <div class="select-date" id="{{ spec.parameter_name }}_select" style="min-width: 25%">
+                                <div class="date" style="width: 100px; text-align: left;">{{ spec.title }}：</div>
+                                <el-select size="small" class="simpleui-form-item" filterable remote reserve-keyword
+                                           :loading="is_search_filter_loading"
+                                           :remote-method="{{ spec.parameter_name }}_remote_search_filter"
+                                           v-model="{{ spec.parameter_name }}" clearable placeholder="{{ spec.title }}">
+                                    <el-option
+                                            v-for="node in {{ spec.parameter_name }}_options"
+                                            :key="node.key"
+                                            :label="node.label"
+                                            :value="node.key">
+                                    </el-option>
+                                </el-select>
+                            </div>
+                        {% elif spec|get_lucky_filter == 'cum_search' %}
+                            <input type="hidden" v-model="{{ spec.parameter_name }}" name="{{ spec.parameter_name }}"/>
+                            <div class="select-date" style="min-width: 25%">
+                                <div class="date" style="width: 100px; text-align: left;">{{ spec.title }}：</div>
+                                <el-input size="small" class="simpleui-form-item"
+                                          clearable
+                                          placeholder="{{ spec.title }}"
+                                          v-model="{{ spec.parameter_name }}">
+                                </el-input>
+                            </div>
+
+                        {% elif spec|get_lucky_filter == 'cum_date' %}
+                            <!-- 日期类型 -->
+                            <div class="select-date" style="display: flex; width: 100%">
+                                <div class="date" style="width: 100px; text-align: left;">{{ spec.cum_title }}：</div>
+                                <el-date-picker
+                                        id="{{ spec.parameter_name }}_select_date"
+                                        v-model="{{ spec.field_path }}"
+                                        type="daterange"
+                                        align="right"
+                                        unlink-panels
+                                        size="small"
+                                        range-separator="至"
+                                        start-placeholder="开始日期"
+                                        end-placeholder="结束日期">
+                                </el-date-picker>
+                                <div class="quick-select">
+                                    <div class="cell" :class="select_index == '0'? 'active' : ' ' "
+                                         @click="select_date('0')">昨天
+                                    </div>
+                                    <div class="cell" :class="select_index == '1'? 'active' : ' ' "
+                                         @click="select_date('1')">今天
+                                    </div>
+                                    <div class="cell" :class="select_index == '3'? 'active' : ' ' "
+                                         @click="select_date('3')">近3天
+                                    </div>
+                                    <div class="cell" :class="select_index == '7'? 'active' : ' ' "
+                                         @click="select_date('7')">近7天
+                                    </div>
+                                    <div class="cell" :class="select_index == '15'? 'active' : ' ' "
+                                         @click="select_date('15')">近15天
+                                    </div>
+                                    <div class="cell" :class="select_index == '30'? 'active' : ' ' "
+                                         @click="select_date('30')">近30天
+                                    </div>
+                                </div>
+
+                                <input type="hidden" v-model="{{ spec.field_generic }}gte"
+                                       name="{{ spec.field_generic }}gte"/>
+                                <input type="hidden" v-model="{{ spec.field_generic }}lte"
+                                       name="{{ spec.field_generic }}lte"/>
+
+                            </div>
+
+                        {% elif spec|get_date_type == 'date' or spec|get_date_type == 'datetime' %}
+
+                            <!-- 日期类型 -->
+                            <el-date-picker class="simpleui-form-item"
+                                            size="small"
+                                            v-model="{{ spec.field_path }}"
+                                            @change="change{{ spec|get_date_type|capfirst }}"
+                                            type="{{ spec|get_date_type }}range"
+                                            start-placeholder="{{ spec.title }}"
+                                            end-placeholder="{{ spec.title }}">
+                            </el-date-picker>
+
+                            <input type="hidden" v-model="{{ spec.field_generic }}gte"
+                                   name="{{ spec.field_generic }}gte"/>
+                            <input type="hidden" v-model="{{ spec.field_generic }}lte"
+                                   name="{{ spec.field_generic }}lte"/>
+
+                        {% elif spec|has_filter %}
+
+                            <!-- 选择器 -->
+                            <input type="hidden" v-model="{{ spec.parameter_name }}" name="{{ spec.parameter_name }}"/>
+                            <el-select size="small" class="simpleui-form-item" filterable
+                                       v-model="{{ spec.parameter_name }}" clearable placeholder="{{ spec.title }}">
+                                {% for option in spec.lookup_choices %}
+                                    <el-option label="{{ option.1 }}" value="{{ option.0 }}"></el-option>
+                                {% endfor %}
+                            </el-select>
+                        {% else %}
+
+                            <input type="hidden" v-model="{{ spec.lookup_kwarg }}" name="{{ spec.lookup_kwarg }}"/>
+
+                            <el-select size="small" class="simpleui-form-item" filterable
+                                       v-model="{{ spec.lookup_kwarg }}" clearable
+                                       placeholder="{{ spec.title }}">
+                                {% if spec|get_date_type == 'time' %}
+                                    {% for option in spec.lookup_choices %}
+                                        <el-option label="{{ option }}" value="{{ option|to_str }}"></el-option>
+                                    {% endfor %}
+                                {% elif spec.lookup_choices %}
+                                    {% if spec.lookup_choices.query %}
+                                        {% for option in spec.lookup_choices %}
+                                            <el-option label="{{ option }}" value="{{ option }}"></el-option>
+                                        {% endfor %}
+                                    {% else %}
+                                        {% for option in spec.lookup_choices %}
+                                            <el-option label="{{ option.1 }}" value="{{ option.0 }}"></el-option>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% elif spec.field.choices %}
+                                    {% for option in spec.field.choices %}
+                                        <el-option label="{{ option.1 }}" value="{{ option.0 }}"></el-option>
+                                    {% endfor %}
+                                {% else %}
+                                    {% get_boolean_choices as choices %}
+                                    {% for c in choices %}
+                                        <el-option label="{{ c.1 }}" value="{{ c.0 }}"></el-option>
+                                    {% endfor %}
+                                {% endif %}
+                            </el-select>
+
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                <div>
+                    <el-button size="small" type="primary" icon="el-icon-search"
+                               @click="formSubmit()">{% trans 'Search' %}</el-button>
+                </div>
+
+                {# 显示列表结果数量 #}
+                {% if show_result_count %}
+                    <span class="small quiet" style="margin-left: 10px;">{% blocktrans count counter=cl.result_count %}
+                        {{ counter }} result
+                        {% plural %}{{ counter }} results{% endblocktrans %} (<a
+                            href="?{% if cl.is_popup %}_popup=1{% endif %}">{% if cl.show_full_result_count %}
+                        {% blocktrans with full_result_count=cl.full_result_count %}{{ full_result_count }} total
+                        {% endblocktrans %}{% else %}{% trans "Show all" %}{% endif %}</a>)</span>
+                {% endif %}
+
+                {% for pair in cl.params.items %}
+                    {% if pair.0 != search_var %}
+                        {% if pair.0.0 == '_' or pair.0 == 'o' %}
+                            <input type="hidden" name="{{ pair.0 }}" value="{{ pair.1 }}"/>
+                        {% else %}
+                            <input type="hidden" class="form-params" data-name="{{ pair.0 }}" value="{{ pair.1 }}"/>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </form>
+    </div>
+
+    <script type="text/javascript">
+        window.getLanuage = function (key) {
+            if (!window.Lanuages) {
+                return "";
+            }
+            var val = Lanuages[key];
+            if (!val || val == "") {
+                val = key;
+            }
+            return val
+        }
+
+        Date.prototype.format = function (fmt) {
+            var o = {
+                "M+": this.getMonth() + 1,                 //月份
+                "d+": this.getDate(),                    //日
+                "h+": this.getHours(),                   //小时
+                "m+": this.getMinutes(),                 //分
+                "s+": this.getSeconds(),                 //秒
+                "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                "S": this.getMilliseconds()             //毫秒
+            };
+            if (/(y+)/.test(fmt))
+                fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            for (var k in o)
+                if (new RegExp("(" + k + ")").test(fmt))
+                    fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            return fmt;
+        }
+
+        var searchApp = new Vue({
+            el: '#toolbar',
+            data: {
+                data_value: '',
+                select_index: '',
+                is_search_filter_loading: false,
+                placeholder: '{% trans 'Search' %}{% autoescape off %}{% search_placeholder %}'{% endautoescape %},
+                searchInput: '{{ cl.query }}',
+                {% if cl.has_filters %}
+                    {% for spec in cl.filter_specs %}
+                        {% if spec|get_lucky_filter == 'search' %}
+                            {{ spec.parameter_name }}_options: [],
+                        {% endif %}
+                        {#                        {% if spec|get_lucky_filter == 'cum_date' %}#}
+                        {#                            '{{ spec.search_date}}_gte': '',#}
+                        {#                            '{{ spec.search_date }}_lte': '',#}
+                        {#                        {% endif %}#}
+                        {% if spec.links %}
+                            '{{ spec.field_path }}': '',
+                            '{{ spec.field_generic }}gte': '',
+                            '{{ spec.field_generic }}lte': '',
+                        {% elif spec|has_filter %}
+                            {{ spec.parameter_name }}: '',
+                        {% else %}
+                            '{{ spec.lookup_kwarg }}': '',
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            },
+            created: function () {
+                var self = this;
+                var date_field = [];
+
+                {% if cl.has_filters %}
+                    {% for spec in cl.filter_specs %}
+                        {% if spec|get_lucky_filter == 'search' %}
+                            let {{ spec.parameter_name }}_option_list = []
+                            {% for option in spec.lookup_choices %}
+                                {% if option.0 != -1000 %}
+                                    {{ spec.parameter_name }}_option_list.push({
+                                        'key': '{{ option.0 }}',
+                                        'label': '{{ option.1 }}'
+                                    })
+                                {% endif %}
+                            {% endfor %}
+                            if ({{ spec.parameter_name }}_option_list.length > 0) {
+                                this.{{ spec.parameter_name }}_options = {{ spec.parameter_name }}_option_list
+                                console.log('options:', this.{{ spec.parameter_name }}_options)
+                            }
+                        {% endif %}
+                        {% if spec.links %}
+                            date_field.push('{{ spec.field_path }}')
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                $('.form-params').each(function () {
+                    var key = $(this).attr('data-name');
+                    var value = $(this).val();
+                    self[key] = value;
+                });
+
+                try {
+                    date_field.forEach(key => {
+                        var start = self[key + "__gte"];
+                        var end = self[key + "__lte"];
+                        self[key] = [start, end];
+                    });
+                } catch (e) {
+                    console.warn('日期值回显失败，也许是django版本问题，请至github报告此问题：https://github.com/newpanjing/simpleui/issues');
+                }
+
+            },
+            watch: {
+                {% if cl.has_filters %}
+                    {% for spec in cl.filter_specs %}
+
+                        {% if spec.links %}
+                            '{{ spec.field_path }}': function (newValue, oldValue) {
+                                var type = '{{ spec | get_date_type }}'
+                                try {
+                                    if (newValue) {
+                                        if (newValue[0] != "" && newValue[1] != "") {
+
+                                            if (type == 'date') {
+                                                this['{{ spec.field_generic }}gte'] = newValue[0].format('yyyy-MM-dd');
+                                                this['{{ spec.field_generic }}lte'] = newValue[1].format('yyyy-MM-dd');
+                                            } else if (type == 'datetime') {
+                                                this['{{ spec.field_generic }}gte'] = newValue[0].format('yyyy-MM-dd hh:mm:ss{% get_tz_suffix %}');
+                                                this['{{ spec.field_generic }}lte'] = newValue[1].format('yyyy-MM-dd hh:mm:ss{% get_tz_suffix %}');
+                                            }
+                                        }
+                                    } else {
+                                        if (type == 'date') {
+                                            this['{{ spec.field_generic }}gte'] = '';
+                                            this['{{ spec.field_generic }}lte'] = '';
+                                        } else if (type == 'datetime') {
+                                            this['{{ spec.field_generic }}gte'] = '';
+                                            this['{{ spec.field_generic }}lte'] = '';
+                                        }
+                                    }
+                                } catch (e) {
+                                    //
+                                }
+                            },
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            },
+            methods: {
+
+                {% if cl.has_filters %}
+                    {% for spec in cl.filter_specs %}
+                        {% if spec.links %}
+                            select_date(query) {
+                                const end = new Date();
+                                const start = new Date();
+                                this.select_index = query;
+
+                                console.log('field_path', this['start_date'])
+
+                                if (query === '0') {
+                                    start.setTime(start.getTime() - 3600 * 1000 * 24);
+                                    end.setTime(end.getTime() - 3600 * 1000 * 24);
+                                    this['{{ spec.field_path }}'] = [start, end];
+                                }
+                                if (query === '1') {
+                                    this['{{ spec.field_path }}'] = [start, end];
+                                }
+                                if (query === '3') {
+                                    start.setTime(start.getTime() - 3600 * 1000 * 24 * 3);
+                                    this['{{ spec.field_path }}'] = [start, end];
+                                }
+                                if (query === '7') {
+                                    start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                                    this['{{ spec.field_path }}'] = [start, end];
+                                }
+                                if (query === '15') {
+                                    start.setTime(start.getTime() - 3600 * 1000 * 24 * 15);
+                                    this['{{ spec.field_path }}'] = [start, end];
+                                }
+                                if (query === '30') {
+                                    start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                                    this['{{ spec.field_path }}'] = [start, end];
+                                }
+
+                            },
+                        {% endif %}
+
+                        {% if spec|get_lucky_filter == 'search' %}
+                            {{ spec.parameter_name }}_remote_search_filter(query) {
+
+                                let param = {
+                                    'app_label': '{{ spec.app_label }}',
+                                    'model_name': '{{ spec.model_name }}',
+                                    'field_name': '{{ spec.field_name }}'
+                                }
+                                if (query.length > 0) {
+                                    param['term'] = query
+                                }
+
+                                axios.get('/admin/autocomplete/', {params: param},).then(res => {
+                                    if (res.status == 200) {
+                                        let list = res.data.results
+                                        let option_list = []
+                                        for (let option of list) {
+                                            option_list.push({
+                                                'key': option.id,
+                                                'label': option.text
+                                            })
+                                        }
+                                        this.{{ spec.parameter_name }}_options = option_list
+                                    }
+                                    this.is_search_filter_loading = false
+                                }).catch(err => {
+                                    this.is_search_filter_loading = false
+                                });
+
+                            },
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+
+                remote_search_filter(query) {
+
+                    let param = {
+                        'app_label': '',
+                        'model_name': '',
+                        'field_name': ''
+                    }
+
+                    if (query.length > 0) {
+                        param['term'] = query
+                    }
+
+                    axios.get('/admin/autocomplete/', {params: param},).then(res => {
+                        console.log('search_form:', res);
+                        this.is_search_filter_loading = false
+                    }).catch(err => {
+                        this.is_search_filter_loading = false
+                    });
+                },
+                changeDate: function (d1, d2) {
+                    console.log(arguments)
+                },
+                changeDatetime: function (d1, d2) {
+                    console.log(arguments)
+                },
+                formSubmit: function () {
+                    preSubmit();
+                    document.getElementById('changelist-search').submit();
+                }
+            }
+        })
+
+    </script>
+{% else %}
+    <form id="changelist-search" method="get">
+        <!-- 第几页 -->
+        <input type="hidden" name="p" value="{{ cl.page_num }}"/>
+        <!-- 页大小 -->
+        <input type="hidden" name="s" value="{{ cl.list_per_page }}"/>
+    </form>
+{% endif %}

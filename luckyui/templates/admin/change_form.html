@@ -1,0 +1,212 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify simpletags %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media }}
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'luckyui/css/lucky_change_form.css' %}"/>
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/js/axios.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <style type="text/css">
+
+        #{{ opts.model_name }}_form {
+            padding: 20px 20px 0 20px;
+            background-color: white;
+            margin: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+    </style>
+    <div id="content-main" class="form-main">
+        {# 页头 #}
+        <div class="lucky-page-header">
+            {# 标题和操作按钮 #}
+            <div class="page-header">
+                <div class="back_btn" @click="goBack">
+                    <i class="el-icon-back"></i>
+                    <div class="title">
+                        <div>{% trans 'Back' %}</div>
+                        <div style="margin-left: 10px; margin-right: 10px">|</div>
+                        <div>{{ title }}</div>
+                    </div>
+                </div>
+
+                <div class="submit">
+                    {# 提交按钮 #}
+                    {% block submit_buttons %}{% submit_row %}{% endblock %}
+                </div>
+
+            </div>
+
+            {# 标签栏 编辑页不再使用嵌套inline的方式进行编辑，这里可以简化掉。 #}
+            <div id="detail_form_tabs">
+                <el-tabs v-model="tab_pane_name" @tab-click="handle_click">
+                    <el-tab-pane label="详情信息" name="basic_info">
+                    </el-tab-pane>
+
+                    {# inline标签 #}
+                    {% for inline_admin_formset in inline_admin_formsets %}
+                        <el-tab-pane label="{{ inline_admin_formset.opts.verbose_name|capfirst }}"
+                                     name="{{ inline_admin_formset.opts.opts.app_label }}_{{ inline_admin_formset.opts.opts.model_name }}">
+                        </el-tab-pane>
+                    {% endfor %}
+
+                </el-tabs>
+            </div>
+
+        </div>
+
+        {% block object-tools %}
+            {% if change %}
+                {% if not is_popup %}
+                    <ul class="object-tools">
+                        {% block object-tools-items %}
+                            {# 编辑页 也不需要历史操作记录的弹窗，后面会移除掉 #}
+                            <li>
+                                <el-dialog title="{% trans 'History' %}" :visible.sync="dialogTableVisible">
+                                    <iframe frameborder="0" :src="url" width="100%" height="300"></iframe>
+                                </el-dialog>
+                                {% url opts|admin_urlname:'history' original.pk|admin_urlquote as history_url %}
+                            </li>
+                            {% if has_absolute_url %}
+                                <li>
+                                    <el-button size="small" @click="window.open('{{ absolute_url }}')"
+                                               class="viewsitelink"
+                                               icon="fas fa-globe-asia">{% trans "View on site" %}</el-button>
+                                </li>
+                            {% endif %}
+                        {% endblock %}
+                    </ul>
+                {% endif %}
+            {% endif %}
+        {% endblock %}
+
+        <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post"
+              id="{{ opts.model_name }}_form" class="lucky_change_form" novalidate>
+            {% csrf_token %}
+            {% block form_top %}{% endblock %}
+
+            <div>
+                {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1"/>{% endif %}
+                {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}"/>{% endif %}
+                <input type="hidden" id="button_type" name="" value="">
+                {# 错误提示 #}
+                {% if errors %}
+                    <div id="alert">
+                        <el-alert
+                                title="{% blocktranslate count counter=errors|length %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktranslate %}"
+                                type="error">
+                        </el-alert>
+                    </div>
+                    {{ adminform.form.non_field_errors }}
+                {% endif %}
+                {# 详情/编辑 #}
+                {% block field_sets %}
+                    <div id="detail_basic_info">
+                        {% for fieldset in adminform %}
+                            {% include "admin/includes/fieldset.html" %}
+                        {% endfor %}
+                    </div>
+                {% endblock %}
+
+                {# inline的详情 #}
+                {% block custom_inline_field_sets %}
+                    {% for inline_admin_formset in inline_admin_formsets %}
+                        <div id="detail_{{ inline_admin_formset.opts.opts.app_label }}_{{ inline_admin_formset.opts.opts.model_name }}"
+                             style="display: none">
+                            {% include inline_admin_formset.opts.template %}
+                        </div>
+                    {% endfor %}
+                {% endblock %}
+
+                {% block after_field_sets %}{% endblock %}
+
+                {% block after_related_objects %}{% endblock %}
+
+                {% block admin_change_form_document_ready %}
+                    <script type="text/javascript"
+                            id="django-admin-form-add-constants"
+                            src="{% static 'admin/js/change_form.js' %}"
+                            {% if adminform and add %}
+                            data-model-name="{{ opts.model_name }}"
+                            {% endif %}>
+                    </script>
+                {% endblock %}
+
+                {# JavaScript for prepopulated fields #}
+                {% prepopulated_fields_js %}
+
+            </div>
+        </form>
+
+
+
+    </div>
+    <script type="text/javascript">
+        const submit = new Vue({
+                el: '.lucky-page-header',
+                data: {
+                    tab_pane_name: 'basic_info',
+                    last_tab_pane_name: 'basic_info'
+                },
+                methods: {
+                    goBack: function () {
+                        if(parent.window.app){
+                            parent.window.app.tab_navigate_back(window)
+                        }else{
+                            window.history.go(-1)
+                        }
+                    },
+                    handle_click() {
+                        if (this.tab_pane_name == this.last_tab_pane_name) return
+
+                        let id_last_tab_pane_name = 'detail_' + this.last_tab_pane_name
+                        document.getElementById(id_last_tab_pane_name).style.display = "none" // 隐藏
+                        console.log(id_last_tab_pane_name)
+
+                        let id_tab_pane_name = 'detail_' + this.tab_pane_name
+                        document.getElementById(id_tab_pane_name).style.display = "" // 显示
+                        console.log(id_tab_pane_name)
+
+                        this.last_tab_pane_name = this.tab_pane_name
+                    },
+                    close() {
+                        this.$emit('close')
+                    },
+                }
+            })
+
+        if ($(".object-tools").length != 0) {
+            new Vue({
+                el: '.object-tools',
+                data: {
+                    dialogTableVisible: false,
+                    url: ''
+                },
+                methods: {
+                    go_url: function (url) {
+                        this.url = url;
+                        this.dialogTableVisible = true;
+                    }
+                }
+            })
+        }
+        if (document.getElementById('alert')) {
+            new Vue({
+                el: '#alert'
+            })
+        }
+
+    </script>
+    <script type="text/javascript" src="{% static 'admin/simpleui-x/js/axios.min.js' %}"></script>
+
+{% endblock %}

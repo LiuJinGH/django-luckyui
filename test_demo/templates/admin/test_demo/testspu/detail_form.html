@@ -1,0 +1,25 @@
+{% extends "admin/detail_form.html" %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <script type="text/javascript">
+        custom_first_tab_name = 'spu_info';
+    </script>
+{% endblock %}
+
+{% block custom_before_inline_tab %}
+    <el-tab-pane label="商品详情" name="spu_info"></el-tab-pane>
+{% endblock %}
+
+{% block custom_inline %}
+    <div id="detail_spu_info" class="ckeditor-detail" style=" display: none">
+        <div class="detail-html" v-html="'{{ original.detail }}'" ></div>
+    </div>
+
+    <script type="text/javascript">
+        let detail_spu_info = new Vue({
+            el: '#detail_spu_info',
+            data: {},
+        })
+    </script>
+{% endblock %}

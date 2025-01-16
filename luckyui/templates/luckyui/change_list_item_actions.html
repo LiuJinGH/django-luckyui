@@ -1,0 +1,40 @@
+{% load i18n static simpletags %}
+
+<style type="text/css">
+    .change_list_item_actions_{{ model.id }} {
+        justify-content: flex-start;
+    }
+</style>
+
+<!-- 为了提高css的优先级，放到style里面 -->
+<div class="actions change_list_item_actions_{{ model.id }}" style="width: auto; background: none;">
+    <el-button class="stop-submit" type="text" @click="jump_detail()">
+        查看
+    </el-button>
+
+    {% block item_action_edit_btn %}
+        <el-button class="stop-submit" type="text" @click="jump_change()">
+            编辑
+        </el-button>
+    {% endblock %}
+</div>
+
+{% block extrajs %}
+
+    <script type="text/javascript">
+        new Vue({
+            el: '.change_list_item_actions_{{ model.id }}',
+            data() {
+                return {}
+            },
+            methods: {
+                jump_detail() {
+                    window.location.href = '{{ detail_url }}'
+                },
+                jump_change() {
+                    window.location.href = '{{ change_url }}'
+                }
+            }
+        })
+    </script>
+{% endblock %}
