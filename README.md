@@ -15,9 +15,9 @@
 
 > ！！！Django-LuckyUI是基于Django和SimpleUI的扩展开发项目，如果本项目对您提供了帮助，请同时了解并关注它们。
 
-- Django
+- [Django](https://docs.djangoproject.com/zh-hans/4.2/)
   是一个非常优秀的Python项目。它提供了一个高度集成的软件工具包，实现了通用场景Web应用功能，能够让各种业务场景避开繁琐的底层通用功能直接开发业务功能，让商业项目快速落地，有效降低企业（特别是初创企业）的新项目试错成本。
-- SimpleUI 是一个非常优秀的Django主题项目。它集成了ElementUI并改进了Django自带的ModelAdmin，本项目基于SimpleUI进一步扩展，以期达到真正开箱即用，让项目人员专注业务功能实现的目的。
+- [SimpleUI](https://github.com/newpanjing/simpleui) 是一个非常优秀的Django主题项目。它集成了ElementUI并改进了Django自带的ModelAdmin，本项目基于SimpleUI进一步扩展，以期达到真正开箱即用，让项目人员专注业务功能实现的目的。
 
 > 项目演示地址：还没上线呀\
 > 账号：lucky\
