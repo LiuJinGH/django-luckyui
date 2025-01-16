@@ -6,6 +6,9 @@
     <a href="https://github.com/LiuJinGH/django-luckyui/blob/main/LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-blue.svg">
     </a>
+    <a href="https://www.yuque.com/luckyliu-hofp4/django-luckyui">
+      <img src="https://img.shields.io/badge/doc-语雀文档-green.svg">
+    </a>
 </p>
 
 一个基于Django的工具包，集成了各种在商业化项目中需要用到的通用功能。LuckyUI包含了Django和UniApp两个部分，此项目是Django部分，这里称为Django-LuckyUI。
@@ -25,10 +28,24 @@
 
 交流社区：基本不用QQ，只有微信群，先加我，备注Django-LuckyUI，我在拉你进群。
 
+<p align="center">
+    <img src="img/weixin.jpg" width="20%">
+</p>
+
 项目赞助💰：不需要赞助，如果你有好玩，通用场景非常好的需求，提给我们，就是对这个项目的赞助。👉 你提需求，我来开发
 
 外包/广告：不接！不接！不接！如果是基于Django方面的技术咨询，接！接！接！其它的勿扰！！！
 
 依赖项目：
+
+贡献者们：
+
+|Github| 贡献范围 |
+|------|-----|
+|[@weilihua1](https://github.com/weilihua1)| 开发者 |
+|[@Silveryun](https://github.com/Silveryun)| 开发者 |
+|[@Topboom](https://github.com/Topboom)| 开发者 |
+
+
 
 关于我们：元始开源小组 为了建设一个基于Python生态圈，更低成本更高效率的可支持开展商业化项目的开源社区。
