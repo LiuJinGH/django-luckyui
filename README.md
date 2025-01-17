@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="img/luckui.png">
+    <img src="img/luckyui.png">
 </p>
 
 <p align="center">

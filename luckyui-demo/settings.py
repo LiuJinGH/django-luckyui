@@ -131,6 +131,7 @@ CAPTCHA_IGNORE_STR = 'llll'
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+SIMPLEUI_DEFAULT_THEME = 'luckyui-blue.css'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')  # 运行collectstatic命令时收集所有静态文件的目标目录
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static_files"),  # 项目级别的静态文件目录

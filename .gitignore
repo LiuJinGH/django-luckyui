@@ -16,3 +16,4 @@ log_backup.log.*
 temp_file/
 test_demo/2024/*
 media/*
+doc/*
