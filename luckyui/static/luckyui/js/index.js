@@ -98,7 +98,6 @@
     new Vue({
         el: '#main',
         data: {
-            is_notify_drawer: false,
             is_call: false,
             drawer: false,
             mobile: false,
@@ -342,10 +341,6 @@
                 let urls = this.page_list[index];
                 window.app.openTab(urls);
                 console.log("jumpPage")
-            },
-
-            show_notify_drawer() {
-                this.is_notify_drawer = !this.is_notify_drawer
             },
             handlerMenus(menus) {
                 let self = this;

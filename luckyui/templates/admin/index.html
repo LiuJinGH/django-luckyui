@@ -196,12 +196,7 @@
                                 <el-button
                                         :icon="this.zoom?'fas fa-compress-arrows-alt':'fas fa-expand-arrows-alt'"
                                         @click="goZoom()" circle></el-button>
-
-                                {% if doctor_id != 0 %}
-                                    <!-- 医生通知消息-->
-                                    <el-button icon="fa-solid fa-bell" @click="show_notify_drawer" circle></el-button>
-
-                                {% endif %}
+                            
                                 {# 首页 #}
                                 <el-button icon="fas fa-home" @click="goIndex('{{ 'SIMPLEUI_INDEX'|get_config }}')"
                                            circle v-waves></el-button>
@@ -318,12 +313,6 @@
         <iframe frameborder="0" :src="pwdDialog.url" width="100%" height="500"></iframe>
     </el-dialog>
 
-    <!--   医生通知消息-->
-    {% block drawer %}
-        <notify-drawer :is_notify_drawer="is_notify_drawer" doctor_id="{{ doctor_id }}"
-                       @close="is_notify_drawer = false"></notify-drawer>
-    {% endblock %}
-
     <!--   快捷菜单-->
     {% block shortcut_menu %}
 
@@ -433,9 +422,7 @@
 
         <!-- 富文本编辑 -->
         <script type="text/javascript" src="{% static 'admin/luckyui-x/js/marked.min.js' %}"></script>
-
-        <script type="text/javascript"
-                src="{% static 'admin/luckyui-x/js/components.js' %}?_={% get_version %}"></script>
+        
         <script type="text/javascript" src="{% static 'admin/luckyui-x/js/menu.js' %}?_={% get_version %}"></script>
         <script type="text/javascript" src="{% static 'luckyui/js/index.js' %}"></script>
     {% endblock %}

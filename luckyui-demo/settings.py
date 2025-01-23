@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'ckeditor',
     'ckeditor_uploader',
 
+    'user',
+
 ]
 
 MIDDLEWARE = [
@@ -63,6 +65,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'luckyui-demo.urls'
+
+AUTH_USER_MODEL = 'user.LuckyUser'
 
 TEMPLATES = [
     {
