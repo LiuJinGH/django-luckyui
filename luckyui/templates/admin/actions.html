@@ -12,7 +12,8 @@
 
                 {% block custom_actions %}
                 {% endblock %}
-
+                
+                {# 添加按钮 #}
                 {% block custom_add_actions %}
                     {% if has_add_permission %}
                         {% url cl.opts|admin_urlname:'add' as add_url %}

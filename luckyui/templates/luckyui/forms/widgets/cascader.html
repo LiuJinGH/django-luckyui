@@ -1,0 +1,37 @@
+<div class="lucky-cascader-{{ widget.name }}" style="display: inline !important;">
+    {% include "luckyui/forms/widgets/none_textarea.html" %}
+
+    <el-cascader :value="input_value" size="small" :options="options" :show-all-levels="false"
+                 @change="change_value"></el-cascader>
+</div>
+
+<script type="text/javascript">
+    new Vue({
+        el: '.lucky-cascader-{{ widget.name }}',
+        data() {
+            return {
+                input_value: 0,
+                options: []
+            }
+        },
+        mounted() {
+            this.field_id = 'id_' + "{{ widget.name }}"
+            console.log('field_id:', this.field_id)
+            console.log('lucky-cascader')
+
+            let cascader_options = '{{ widget.cascader_options|safe }}'
+            console.log('cascader_options:', cascader_options)
+            this.options = JSON.parse(cascader_options)
+        },
+        methods: {
+            change_value(value) {
+                console.log('change_value:')
+                console.log(value)
+                let select_value = value.pop()
+                this.input_value = select_value
+                console.log(select_value)
+                document.getElementById(this.field_id).value = select_value
+            }
+        }
+    })
+</script>

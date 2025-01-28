@@ -84,7 +84,7 @@ class LuckyModelAdmin(LuckyImportExportMixin, AjaxAdmin):
                 )
             )
 
-        return url + super().get_urls()
+        return url + add_urls + super().get_urls()
 
     def get_readonly_fields(self, request, obj=None):
         is_detail_view = self.is_detail_view(request)

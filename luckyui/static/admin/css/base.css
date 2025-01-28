@@ -762,7 +762,7 @@ a.deletelink:hover {
 }
 #footer {
   clear: both;
-  padding: 10px;
+  padding: 0px;
 }
 /* COLUMN TYPES */
 .colMS {
