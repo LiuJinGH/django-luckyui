@@ -21,7 +21,4 @@ class ImageField(files.ImageField):
     def formfield(self, **kwargs):
         kwargs['form_class'] = lucky_forms.ImageField
         kwargs['widget'] = lucky_forms.ImageField.widget
-
-        temp = super().formfield(**kwargs)
-
-        return temp
+        return super().formfield(**kwargs)

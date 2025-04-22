@@ -7,3 +7,5 @@ from .date_time_field import DateTimeField
 from .image_field import ImageField
 from .money_field import MoneyField
 from .text_field import TextField
+from .image_list_field import ImageListField
+from .async_image_field import AsyncImageField

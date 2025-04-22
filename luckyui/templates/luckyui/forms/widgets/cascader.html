@@ -1,8 +1,13 @@
 <div class="lucky-cascader-{{ widget.name }}" style="display: inline !important;">
     {% include "luckyui/forms/widgets/none_textarea.html" %}
 
-    <el-cascader :value="input_value" size="small" :options="options" :show-all-levels="false"
-                 @change="change_value"></el-cascader>
+    <el-cascader :value="input_value"
+                 size="small"
+                 :options="options"
+                 :show-all-levels="false"
+                 :props="{ checkStrictly: true }"
+                 @change="change_value"
+                ></el-cascader>
 </div>
 
 <script type="text/javascript">
@@ -17,7 +22,9 @@
         mounted() {
             this.field_id = 'id_' + "{{ widget.name }}"
             console.log('field_id:', this.field_id)
-            console.log('lucky-cascader')
+            this.input_value = document.getElementById(this.field_id).value
+            this.input_value = parseInt(this.input_value)
+            console.log('input_value:', this.input_value)
 
             let cascader_options = '{{ widget.cascader_options|safe }}'
             console.log('cascader_options:', cascader_options)
@@ -27,10 +34,11 @@
             change_value(value) {
                 console.log('change_value:')
                 console.log(value)
-                let select_value = value.pop()
-                this.input_value = select_value
-                console.log(select_value)
-                document.getElementById(this.field_id).value = select_value
+                if(value && value.length > 0) {
+                    document.getElementById(this.field_id).value = value[value.length - 1]
+                }else {
+                    document.getElementById(this.field_id).value = ''
+                }
             }
         }
     })

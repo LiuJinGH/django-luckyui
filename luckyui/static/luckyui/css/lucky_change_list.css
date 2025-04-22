@@ -81,4 +81,11 @@
 #content-main #changelist {
   flex-grow: 1;
 }
+.form-readonly-img {
+  width: 100px;
+  height: 100px;
+  border-radius: 10px;
+  object-fit: contain;
+  border: 1px solid #f8f8f8;
+}
 /*# sourceMappingURL=lucky_change_list.css.map */

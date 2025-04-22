@@ -8,3 +8,5 @@ from .lucky_image_upload import LuckyImageUpload
 from .lucky_money import LuckyMoney
 from .lucky_text_area import LuckyTextarea
 from .lucky_cascader import LuckyCascader
+from .lucky_image_list_upload import LuckyImageListUpload
+from .lucky_async_image_upload import LuckyAsyncImageUpload

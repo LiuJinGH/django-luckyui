@@ -34,8 +34,7 @@ def display_for_field(value, field, empty_value_display):
         return formats.number_format(value, field.decimal_places)
     elif isinstance(field, (models.IntegerField, models.FloatField)):
         if isinstance(field, lucky_fields.MoneyField):
-            money = formats.number_format(value / 100, 2)
-            return str(money) + '元'
+            return str(value) + '元'
         return formats.number_format(value)
     elif isinstance(field, models.FileField) and value:
         if isinstance(field, models.ImageField):
@@ -47,5 +46,7 @@ def display_for_field(value, field, empty_value_display):
             return json.dumps(value, ensure_ascii=False, cls=field.encoder)
         except TypeError:
             return display_for_value(value, empty_value_display)
+    elif isinstance(field, lucky_fields.AsyncImageField) and value:
+        return format_html('<img class="form-readonly-img" src="{}">', value.url)
     else:
         return display_for_value(value, empty_value_display)

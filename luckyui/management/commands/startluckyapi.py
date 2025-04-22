@@ -42,13 +42,14 @@ class Command(BaseCommand):
         for name, api_class in inspect.getmembers(app_api, inspect.isclass):
 
             for fun_name, api_fun in inspect.getmembers(api_class, inspect.isfunction):
-                api_json.append({
-                    'api': fun_name,
-                    'name': api_fun.name,
-                    'method': api_fun.method,
-                    'content_type': api_fun.content_type,
-                    'is_upload': api_fun.is_upload
-                })
+                if hasattr(api_fun, 'name'):
+                    api_json.append({
+                        'api': fun_name,
+                        'name': api_fun.name,
+                        'method': api_fun.method,
+                        'content_type': api_fun.content_type,
+                        'is_upload': api_fun.is_upload
+                    })
         json_path = app_label + '/api/' + app_label + '_api.js'
         self.create_api_js(app_label, json_path, api_json)
 

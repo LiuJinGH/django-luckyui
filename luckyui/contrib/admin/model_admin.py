@@ -545,22 +545,28 @@ class LuckyModelAdmin(LuckyImportExportMixin, AjaxAdmin):
 
         add = object_id is None
 
+        # 是新增
         if add:
             if not self.has_add_permission(request):
+                # 没有新增权限
                 raise PermissionDenied
             obj = None
 
         else:
+            # 不是新增，获取对象
             obj = self.get_object(request, unquote(object_id), to_field)
 
             if request.method == "POST":
                 if not self.has_change_permission(request, obj):
+                    # 没有修改权限
                     raise PermissionDenied
             else:
                 if not self.has_view_or_change_permission(request, obj):
+                    # 也没有查看权限
                     raise PermissionDenied
 
             if obj is None:
+                # 找不到这个文件
                 return self._get_obj_does_not_exist_redirect(
                     request, self.opts, object_id
                 )
@@ -576,11 +582,13 @@ class LuckyModelAdmin(LuckyImportExportMixin, AjaxAdmin):
                 form.instance,
                 change=not add,
             )
+            # 验证表单
             form_validated = form.is_valid()
             if form_validated:
                 new_object = self.save_form(request, form, change=not add)
             else:
                 new_object = form.instance
+
             if all_valid(formsets) and form_validated:
                 self.save_model(request, new_object, form, not add)
                 self.save_related(request, form, formsets, not add)

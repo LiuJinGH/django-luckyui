@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.core.files.storage import Storage
 from minio import Minio
+from minio.commonconfig import CopySource
 from minio.error import S3Error
 
 
@@ -44,12 +45,40 @@ class LuckyStorage(Storage):
         self._client.put_object(self._bucket, name, content, content.size)
         return name
 
+    def move(self, old_name, new_name):
+        """
+        将存储后端的文件从一个位置移动到另一个位置。
+        :param old_name:
+        :param new_name:
+        :return:
+        """
+        self.copy(old_name, new_name)
+        self.delete(old_name)
+
+    def copy(self, old_name, new_name):
+        """
+        将存储后端的文件从一个位置复制到另一个位置。
+        :param old_name:
+        :param new_name:
+        :return:
+        """
+        copy_source = CopySource(self._bucket, old_name)
+        self._client.copy_object(self._bucket, new_name, copy_source)
+
     def delete(self, name):
         """
         删除存储后端的文件。
         :param name:
         :return:
         """
+        try:
+            # 删除指定桶中的文件（对象）
+            self._client.remove_object(self._bucket, name)
+            print("文件删除成功！")
+            return True
+        except S3Error as e:
+            print(f"删除失败: {e}")
+            return False
 
     def exists(self, name):
         """
